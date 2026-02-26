@@ -2,7 +2,7 @@
 // Backends:
 //   - Coqui TTS (local, free, offline) — http://localhost:5002
 //   - ElevenLabs free tier — 10,000 chars/month free
-//   - System TTS fallback (espeak/say) — zero cost, always available
+//   - System TTS fallback (espeak / say / PowerShell) — zero cost
 package tts
 
 import (
@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,9 +32,9 @@ const (
 // Request is a speech synthesis request.
 type Request struct {
 	Text       string
-	Voice      string // voice ID or name (provider-specific)
-	OutputPath string // WAV/MP3 output file path
-	Speed      float64 // 1.0 = normal
+	Voice      string  // voice ID or name (provider-specific)
+	OutputPath string  // WAV/MP3 output file; empty = temp file
+	Speed      float64 // 1.0 = normal; only used where supported
 }
 
 // Result holds synthesis output.
@@ -45,11 +46,11 @@ type Result struct {
 
 // Agent is the TTS agent.
 type Agent struct {
-	backend   Backend
-	coquiURL  string
-	apiKey    string // ElevenLabs
-	voiceID   string // ElevenLabs default voice
-	client    *http.Client
+	backend  Backend
+	coquiURL string
+	apiKey  string // ElevenLabs
+	voiceID string // ElevenLabs default voice
+	client  *http.Client
 }
 
 // Option configures the TTS agent.
@@ -57,7 +58,10 @@ type Option func(*Agent)
 
 // WithCoqui uses a local Coqui TTS server.
 func WithCoqui(baseURL string) Option {
-	return func(a *Agent) { a.backend = BackendCoqui; a.coquiURL = baseURL }
+	return func(a *Agent) {
+		a.backend = BackendCoqui
+		a.coquiURL = baseURL
+	}
 }
 
 // WithElevenLabs uses the ElevenLabs API (free tier: 10k chars/month).
@@ -69,12 +73,12 @@ func WithElevenLabs(apiKey, voiceID string) Option {
 	}
 }
 
-// WithSystem uses the OS built-in TTS (espeak on Linux, say on macOS).
+// WithSystem uses the OS built-in TTS (espeak on Linux, say on macOS, SAPI on Windows).
 func WithSystem() Option {
 	return func(a *Agent) { a.backend = BackendSystem }
 }
 
-// New creates a TTS agent. Defaults to system TTS (always available).
+// New creates a TTS agent. Defaults to system TTS (always available, no setup).
 func New(opts ...Option) *Agent {
 	a := &Agent{
 		backend:  BackendSystem,
@@ -87,43 +91,65 @@ func New(opts ...Option) *Agent {
 	return a
 }
 
-// Speak synthesises text to a file (or plays it directly for system TTS).
+// Speak synthesises text and saves to file (or plays it for system TTS).
 func (a *Agent) Speak(ctx context.Context, req Request) (*Result, error) {
-	if req.Speed == 0 { req.Speed = 1.0 }
+	if req.Text == "" {
+		return nil, fmt.Errorf("tts: text must not be empty")
+	}
+	if req.Speed == 0 {
+		req.Speed = 1.0
+	}
 	switch a.backend {
 	case BackendCoqui:
 		return a.speakCoqui(ctx, req)
 	case BackendElevenLabs:
 		return a.speakElevenLabs(ctx, req)
 	case BackendSystem:
-		return a.speakSystem(ctx, req)
+		return a.speakSystem(req)
 	default:
 		return nil, fmt.Errorf("tts: unsupported backend: %s", a.backend)
 	}
 }
 
-// --- Coqui TTS backend ---
+// --- Coqui TTS ---
 
 func (a *Agent) speakCoqui(ctx context.Context, req Request) (*Result, error) {
 	start := time.Now()
-	url := fmt.Sprintf("%s/api/tts?text=%s", a.coquiURL, req.Text)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil { return nil, err }
+	// Properly encode the text as a query parameter
+	params := url.Values{}
+	params.Set("text", req.Text)
+	if req.Voice != "" {
+		params.Set("speaker_id", req.Voice)
+	}
+	fullURL := a.coquiURL + "/api/tts?" + params.Encode()
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("tts[coqui]: build request: %w", err)
+	}
 	resp, err := a.client.Do(httpReq)
-	if err != nil { return nil, fmt.Errorf("tts[coqui]: %w", err) }
+	if err != nil {
+		return nil, fmt.Errorf("tts[coqui]: %w", err)
+	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("tts[coqui]: status %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 256))
+		return nil, fmt.Errorf("tts[coqui]: status %d: %s", resp.StatusCode, raw)
 	}
 	outPath := req.OutputPath
-	if outPath == "" { outPath = tempWAV() }
+	if outPath == "" {
+		outPath = tempAudio("wav")
+	}
 	data, err := io.ReadAll(resp.Body)
-	if err != nil { return nil, err }
-	if err := os.WriteFile(outPath, data, 0644); err != nil { return nil, err }
+	if err != nil {
+		return nil, fmt.Errorf("tts[coqui]: read body: %w", err)
+	}
+	if err := os.WriteFile(outPath, data, 0o644); err != nil {
+		return nil, fmt.Errorf("tts[coqui]: write file: %w", err)
+	}
 	return &Result{Path: outPath, Backend: BackendCoqui, Latency: time.Since(start)}, nil
 }
 
-// --- ElevenLabs backend (free tier) ---
+// --- ElevenLabs (free tier: 10k chars/month) ---
 
 type elevenLabsRequest struct {
 	Text          string                 `json:"text"`
@@ -133,53 +159,84 @@ type elevenLabsRequest struct {
 
 func (a *Agent) speakElevenLabs(ctx context.Context, req Request) (*Result, error) {
 	start := time.Now()
-	body, _ := json.Marshal(elevenLabsRequest{
+	body, err := json.Marshal(elevenLabsRequest{
 		Text:    req.Text,
 		ModelID: "eleven_monolingual_v1",
-		VoiceSettings: map[string]interface{}{"stability": 0.5, "similarity_boost": 0.75},
+		VoiceSettings: map[string]interface{}{
+			"stability":        0.5,
+			"similarity_boost": 0.75,
+		},
 	})
+	if err != nil {
+		return nil, err
+	}
 	voiceID := a.voiceID
-	if req.Voice != "" { voiceID = req.Voice }
-	url := fmt.Sprintf("https://api.elevenlabs.io/v1/text-to-speech/%s", voiceID)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil { return nil, err }
+	if req.Voice != "" {
+		voiceID = req.Voice
+	}
+	if voiceID == "" {
+		voiceID = "21m00Tcm4TlvDq8ikWAM" // ElevenLabs default — Rachel
+	}
+	endpoint := fmt.Sprintf("https://api.elevenlabs.io/v1/text-to-speech/%s", voiceID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
 	httpReq.Header.Set("xi-api-key", a.apiKey)
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "audio/mpeg")
 	resp, err := a.client.Do(httpReq)
-	if err != nil { return nil, fmt.Errorf("tts[elevenlabs]: %w", err) }
+	if err != nil {
+		return nil, fmt.Errorf("tts[elevenlabs]: %w", err)
+	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return nil, fmt.Errorf("tts[elevenlabs]: status %d: %s", resp.StatusCode, raw)
 	}
 	outPath := req.OutputPath
-	if outPath == "" { outPath = tempWAV() }
+	if outPath == "" {
+		outPath = tempAudio("mp3")
+	}
 	data, err := io.ReadAll(resp.Body)
-	if err != nil { return nil, err }
-	if err := os.WriteFile(outPath, data, 0644); err != nil { return nil, err }
+	if err != nil {
+		return nil, fmt.Errorf("tts[elevenlabs]: read body: %w", err)
+	}
+	if err := os.WriteFile(outPath, data, 0o644); err != nil {
+		return nil, fmt.Errorf("tts[elevenlabs]: write file: %w", err)
+	}
 	return &Result{Path: outPath, Backend: BackendElevenLabs, Latency: time.Since(start)}, nil
 }
 
-// --- System TTS backend ---
+// --- System TTS (no deps, always works) ---
 
-func (a *Agent) speakSystem(_ context.Context, req Request) (*Result, error) {
+func (a *Agent) speakSystem(req Request) (*Result, error) {
 	start := time.Now()
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		cmd = exec.Command("say", req.Text)
+		args := []string{req.Text}
+		if req.Voice != "" {
+			args = append([]string{"-v", req.Voice}, args...)
+		}
+		cmd = exec.Command("say", args...)
 	case "windows":
-		cmd = exec.Command("powershell", "-Command",
-			fmt.Sprintf(`Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('%s')`, req.Text))
-	default:
+		script := fmt.Sprintf(
+			`Add-Type -AssemblyName System.Speech; `+
+				`$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; `+
+				`$s.Speak('%s')`,
+			req.Text)
+		cmd = exec.Command("powershell", "-NoProfile", "-Command", script)
+	default: // Linux + others
 		cmd = exec.Command("espeak", req.Text)
 	}
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("tts[system]: %w", err)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("tts[system]: %w — output: %s", err, out)
 	}
 	return &Result{Backend: BackendSystem, Latency: time.Since(start)}, nil
 }
 
-func tempWAV() string {
-	return filepath.Join(os.TempDir(), fmt.Sprintf("nexus-tts-%d.wav", time.Now().UnixNano()))
+func tempAudio(ext string) string {
+	return filepath.Join(os.TempDir(),
+		fmt.Sprintf("nexus-tts-%d.%s", time.Now().UnixNano(), ext))
 }

@@ -17,7 +17,7 @@ import (
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the NEXUS daemon",
-	Long:  `Starts the NEXUS background daemon with all agents, memory, webui and gateway.`,
+	Long:  `Starts the NEXUS background daemon with all agents, memory, Web UI and gateway.`,
 	RunE:  runStart,
 }
 
@@ -29,7 +29,7 @@ func init() {
 	startCmd.Flags().Bool("no-webui", false, "Disable web UI")
 }
 
-func runStart(cmd *cobra.Command, args []string) error {
+func runStart(cmd *cobra.Command, _ []string) error {
 	debug, _ := cmd.Root().PersistentFlags().GetBool("debug")
 	if debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -43,17 +43,19 @@ func runStart(cmd *cobra.Command, args []string) error {
 	webuiAddr, _ := cmd.Flags().GetString("webui-addr")
 	noWebUI, _ := cmd.Flags().GetBool("no-webui")
 
-	fmt.Printf("\n\033[35m  NEXUS AI v1.6\033[0m\n")
+	fmt.Printf("\n\033[35m  NEXUS AI v1.7\033[0m\n")
 	fmt.Printf("  Gateway : %s:%d\n", host, port)
 	if !noWebUI {
 		fmt.Printf("  Web UI  : http://localhost%s\n", webuiAddr)
 	}
+	fmt.Printf("  Skills  : run 'nexus skills list' to see all plugins\n")
 	fmt.Println()
 
 	llmCfg := types.LLMConfig{
-		Provider:   "ollama",
-		Model:      "llama3.2",
-		BaseURL:    "http://localhost:11434/v1",
+		Provider:   getEnvOrDefault("NEXUS_LLM_PROVIDER", "ollama"),
+		Model:      getEnvOrDefault("NEXUS_LLM_MODEL", "llama3.2"),
+		BaseURL:    getEnvOrDefault("NEXUS_LLM_BASE_URL", "http://localhost:11434/v1"),
+		APIKey:     os.Getenv("NEXUS_LLM_API_KEY"),
 		TimeoutSec: 120,
 	}
 	r := router.New(llmCfg)
@@ -76,4 +78,11 @@ func runStart(cmd *cobra.Command, args []string) error {
 	<-quit
 	log.Info().Msg("NEXUS shutting down gracefully")
 	return nil
+}
+
+func getEnvOrDefault(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }
