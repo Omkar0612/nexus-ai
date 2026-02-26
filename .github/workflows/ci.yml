@@ -22,19 +22,14 @@ jobs:
       - name: Install system deps
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y \
-            gcc \
-            libsqlite3-dev \
-            libx11-dev \
-            libxtst-dev \
-            libayatana-appindicator3-dev \
-            pkg-config
+          sudo apt-get install -y gcc libsqlite3-dev pkg-config
 
       - name: Tidy and download modules
         env:
           GONOSUMCHECK: "*"
           GONOSUMDB: "*"
           GOFLAGS: "-mod=mod"
+          GOPATH: /home/runner/go
         run: |
           go mod tidy
           go mod download
@@ -45,13 +40,17 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add go.sum go.mod
           git diff --cached --quiet || git commit -m "chore: update go.sum [skip ci]"
-          git push || true
+          git push origin HEAD:main || true
 
       - name: Build
-        run: CGO_ENABLED=1 go build ./...
+        env:
+          CGO_ENABLED: "1"
+        run: go build -tags ci ./...
 
       - name: Test
-        run: CGO_ENABLED=1 go test ./... -timeout 60s
+        env:
+          CGO_ENABLED: "1"
+        run: go test -tags ci ./... -timeout 60s
 
   python:
     runs-on: ubuntu-latest

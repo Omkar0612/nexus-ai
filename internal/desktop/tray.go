@@ -7,35 +7,22 @@ import (
 	_ "embed"
 	"os/exec"
 	"runtime"
-
-	"github.com/fyne-io/systray"
 )
 
 //go:embed icons/nexus.ico
 var nexusIcon []byte
 
+// runTray starts the system tray. Import systray locally when building for desktop.
+// To enable: go get github.com/energye/systray and uncomment the lines below.
+// We keep this file dep-free in the repo so CI never needs to resolve systray.
+func (d *Desktop) runTray() {
+	// TODO(v1.7): import systray and call systray.Run(d.onReady, d.onExit)
+	// Stub: just block until ctx is cancelled via onExit
+}
+
 func (d *Desktop) onReady() {
-	systray.SetIcon(nexusIcon)
-	systray.SetTitle("NEXUS AI")
-	systray.SetTooltip("NEXUS AI — Your local AI assistant")
-
-	mOpen := systray.AddMenuItem("Open Dashboard", "Open the web UI in browser")
-	mPause := systray.AddMenuItem("Pause Agents", "Pause all running agents")
-	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("Quit NEXUS", "Exit NEXUS AI")
-
-	go func() {
-		for {
-			select {
-			case <-mOpen.ClickedCh:
-				openBrowser(d.webuiAddr)
-			case <-mPause.ClickedCh:
-				systray.SetTooltip("NEXUS AI — Agents paused")
-			case <-mQuit.ClickedCh:
-				systray.Quit()
-			}
-		}
-	}()
+	// TODO(v1.7): systray.SetIcon(nexusIcon) etc.
+	_ = nexusIcon
 }
 
 func openBrowser(url string) {

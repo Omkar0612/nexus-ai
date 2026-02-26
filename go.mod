@@ -3,17 +3,14 @@ module github.com/Omkar0612/nexus-ai
 go 1.22
 
 require (
-	github.com/fyne-io/systray v1.10.1-0.20240111184411-11c585b564ca
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/rs/zerolog v1.32.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
-	golang.design/x/hotkey v0.4.0
 )
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/fredbi/uri v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
