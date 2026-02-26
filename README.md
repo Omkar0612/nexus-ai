@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;CLI+%E2%80%A2+Telegram+%E2%80%A2+Voice+%E2%80%A2+Email+%E2%80%A2+Phone;Multi-agent+%E2%80%A2+Offline+%E2%80%A2+AES-256+Vault" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+CLI+%E2%80%A2+Telegram+%E2%80%A2+Voice+%E2%80%A2+Email;Multi-agent+%E2%80%A2+Offline+%E2%80%A2+AES-256+Vault" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -22,7 +22,7 @@
 
 <br/>
 
-[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🆓 Free LLMs](#-free-llm-providers) · [📺 Demo](#-demo) · [📋 Changelog](#-changelog) · [🔮 Roadmap](ROADMAP.md) · [🤝 Contribute](#-built-by-the-community)
+[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🌐 Web UI](#-web-ui-new-in-v16) · [🆓 Free LLMs](#-free-llm-providers) · [📺 Demo](#-demo) · [📋 Changelog](#-changelog) · [🔮 Roadmap](ROADMAP.md) · [🤝 Contribute](#-built-by-the-community)
 
 </div>
 
@@ -33,17 +33,41 @@
 ```bash
 # 1. Clone & build
 git clone https://github.com/Omkar0612/nexus-ai
-cd nexus-ai && make build
+cd nexus-ai
+CGO_ENABLED=1 go build -tags ci ./...
 
 # 2. Add your free API key (console.groq.com — 60 sec signup)
 cp config/nexus.example.toml ~/.nexus/nexus.toml
 
-# 3. Run
+# 3. Run — Web UI opens at http://localhost:7070
 nexus start
-nexus chat
 ```
 
 > 🆓 **No paid API needed.** Works with Groq (free), Gemini (free), Ollama (local), OpenRouter (free tier).
+
+<details>
+<summary><b>🌐 Web UI (new in v1.6) &rarr;</b></summary>
+
+```bash
+# Start with Web UI (default: http://localhost:7070)
+nexus start
+
+# Custom port
+nexus start --webui-addr :8080
+
+# CLI only, no Web UI
+nexus start --no-webui
+
+# Debug mode
+nexus start --debug
+```
+
+The Web UI provides:
+- 💬 **Live chat** — stream responses word by word from your local LLM
+- 📡 **Agent activity feed** — real-time SSE stream of what every agent is doing
+- 🏥 **Health endpoint** — `GET /api/health` → `{"status":"ok","version":"1.6"}`
+
+</details>
 
 <details>
 <summary><b>🐳 Full cluster (Docker) &rarr;</b></summary>
@@ -83,10 +107,55 @@ nexus telegram start
 
 ---
 
+## 🌐 Web UI — New in v1.6
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  NEXUS AI  v1.6                              ● agents: 3 active │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  You: research top 5 AI tools launched this week         │   │
+│  │                                                          │   │
+│  │  NEXUS: Here are the top 5 AI tools launched this        │   │
+│  │  week, analysed and ranked by practical utility...       │   │
+│  │  ▌                                               (live)  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  📡 Agent Activity                                               │
+│  ● researcher  running   — fetching latest ProductHunt data      │
+│  ✓ analyst     done      — pricing comparison complete           │
+│  ✓ writer      done      — summary generated                     │
+│                                                                  │
+│  [ Type a message...                              ] [ Send ▶ ]  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Stack:** `net/http` stdlib · `//go:embed` static assets · SSE event stream · zero JS frameworks
+
+**API endpoints:**
+
+| Method | Endpoint | Description |
+|:---:|:---|:---|
+| `POST` | `/api/chat` | Stream LLM response as SSE |
+| `GET` | `/api/events` | Live agent activity stream |
+| `GET` | `/api/health` | Health check + version |
+| `GET` | `/` | Embedded dark-mode UI |
+
+---
+
 ## 📺 Demo
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║  $ nexus start                                               ║
+║                                                              ║
+║    NEXUS AI v1.6                                             ║
+║    Gateway : 127.0.0.1:7700                                  ║
+║    Web UI  : http://localhost:7070   ← open in browser       ║
+║                                                              ║
+╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
 ║  $ nexus chat                                                ║
 ║                                                              ║
@@ -129,6 +198,25 @@ nexus telegram start
 </div>
 
 <br/>
+
+### 🌐 Web UI Server
+> *Chat with NEXUS in your browser. Zero JS frameworks. Fully embedded.*
+
+A complete `net/http` server ships inside the binary via `//go:embed`. Open `http://localhost:7070` after `nexus start` — no separate frontend server, no Node.js, no build step.
+
+```bash
+# Stream a response from the API directly
+curl -X POST http://localhost:7070/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message": "summarise my tasks for today"}'
+
+# Watch live agent activity
+curl http://localhost:7070/api/events
+# data: {"agent":"researcher","status":"running","message":"fetching calendar"}
+# data: {"agent":"researcher","status":"done"}
+```
+
+---
 
 ### 🔍 Drift Detector
 > *The only AI agent that notices when your own work is stalling.*
@@ -259,6 +347,7 @@ Detects connectivity loss. Switches to local Ollama. Queues outbound tasks. Sync
 
 | Integration | What NEXUS can do |
 |:---:|:---|
+| 🌐 **Web UI** | Chat, agent activity feed, health API — all at `localhost:7070` |
 | 📧 **Email** (IMAP/SMTP) | Read, classify, summarise, reply |
 | 🐙 **GitHub** | Create issues, open PRs, review code — HITL on destructive ops |
 | 📞 **Phone** (Twilio) | Call or SMS on your behalf |
@@ -299,6 +388,7 @@ Detects connectivity loss. Switches to local Ollama. Queues outbound tasks. Sync
 | Risk gate before every action | ✅ | ⚠️ | ⚠️ | ⚠️ | ❌ |
 | Works fully offline | ✅ | ❌ | ❌ | ❌ | ❌ |
 | AES-256 local secrets vault | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Browser-based Web UI | ✅ | ❌ | ❌ | ✅ | ❌ |
 | Reads your email | ✅ | ❌ | ⚠️ | ⚠️ | ❌ |
 | Calls your phone | ✅ | ❌ | ❌ | ⚠️ | ❌ |
 | Reads your tone | ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -322,8 +412,8 @@ Detects connectivity loss. Switches to local Ollama. Queues outbound tasks. Sync
 <br/>
 
 ```
-v1.5  ████████░░░░░░░░░░░░  40%   Plugin SDK · Calendar Agent · Vision · Semantic Memory
-v1.6  ░░░░░░░░░░░░░░░░░░░░   0%   Web UI · Mobile App · Browser Extension · Desktop App
+v1.5  ██████████████████░░  90%   Plugin SDK · Calendar Agent · Vision · Semantic Memory
+v1.6  ████████████████████ 100%  ✅ Web UI · SSE Agent Feed · Desktop Scaffold · CI fixed
 v1.7  ░░░░░░░░░░░░░░░░░░░░   0%   Image · Voice Synthesis · Video · Music · Writing Studio
 v1.8  ░░░░░░░░░░░░░░░░░░░░   0%   Code Copilot (LSP) · DevOps Agent · Code Search
 v1.9  ░░░░░░░░░░░░░░░░░░░░   0%   Finance · Health · CRM · Learning · Travel Agents
@@ -341,7 +431,34 @@ v2.0  ░░░░░░░░░░░░░░░░░░░░   0%   NEXUS 
 ## 📋 Changelog
 
 <details open>
-<summary><b>v1.4 — Analytics · Phone · Email · Notes · GitHub Agent</b> &nbsp;🆕</summary>
+<summary><b>v1.6 — Web UI · Desktop Scaffold · CI Hardening</b> &nbsp;🆕</summary>
+
+<br/>
+
+- 🌐 **Web UI Server** — dark-mode chat interface embedded in the binary (`//go:embed`), zero external deps
+- 💬 **Streaming Chat** — `POST /api/chat` streams LLM response word-by-word as Server-Sent Events
+- 📡 **SSE Agent Activity Bus** — `GET /api/events` streams live agent state changes to any connected client
+- 🖥️ **Desktop Scaffold** — system tray + global hotkey (`Ctrl+Shift+Space`) + clipboard monitor stub (v1.7)
+- 🔧 **CLI flags** — `nexus start --webui-addr :7070`, `--no-webui`, `--debug`
+- 🏗️ **CI hardened** — `-tags ci` build strategy, desktop stub for headless runners, clean dep chain
+- 🐛 **Bug fixes** — `TestDetectConflicts` event overlap, `TestSSEHubPublish` ping skip, `zerolog` import
+
+</details>
+
+<details>
+<summary><b>v1.5 — Calendar · Vision · Semantic Memory · Plugin SDK</b></summary>
+
+<br/>
+
+- 📅 **Calendar Agent** — natural language scheduling, conflict detection, free-slot finder, morning digest
+- 👁️ **Vision Agent** — describe images, extract text (OCR), detect objects via local model
+- 🧠 **Semantic Memory** — cosine similarity search across all past conversations and KB entries
+- 🔌 **Plugin SDK** — build and register new NEXUS skills as Go plugins
+
+</details>
+
+<details>
+<summary><b>v1.4 — Analytics · Phone · Email · Notes · GitHub Agent</b></summary>
 
 <br/>
 
