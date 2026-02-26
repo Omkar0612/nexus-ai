@@ -1,12 +1,46 @@
+# Environment and secrets
 .env
+.env.*
+.secrets
+secrets.*
+config/local.*
+
+# Certificates and private keys — NEVER commit these
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# NEXUS config files (may contain API keys)
+nexus.toml
+nexus.yaml
+nexus.yml
+
+# SQLite vault database
 *.db
 *.db-shm
 *.db-wal
+
+# Build artifacts
 bin/
 dist/
+nexus
+
+# Logs
 *.log
+
+# Python (AudioCraft bridge)
 __pycache__/
 *.pyc
 .venv/
+
+# macOS
 .DS_Store
-nexus.toml
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo

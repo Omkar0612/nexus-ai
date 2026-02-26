@@ -3,15 +3,11 @@ package email
 /*
 EmailAgent — full IMAP/SMTP email operations for NEXUS.
 
-NEXUS EmailAgent:
-  1. Connect to any IMAP server (Gmail, Outlook, custom)
-  2. Fetch and classify unread emails by priority
-  3. Auto-redact secrets before passing to LLM
-  4. Draft replies using NEXUS LLM router
-  5. Send via SMTP with auth
-  6. Archive processed emails
-  7. Rule-based auto-responder (OOO, routing rules)
-  8. Store email summaries in audit log
+Security:
+  - SMTP header injection prevented: \r and \n stripped from From/To/Subject
+  - Recipient addresses validated (must contain '@', no newlines)
+  - Password masked in fmt/log output via SecretString type
+  - Sensitive field redaction before any LLM processing
 */
 
 import (
@@ -23,7 +19,23 @@ import (
 	"time"
 )
 
-// EmailPriority classifies an email's urgency
+// SecretString wraps a string and masks it in all fmt/log output.
+// This prevents passwords from appearing in log files or error messages.
+type SecretString struct{ v string }
+
+// NewSecret wraps a plaintext value as a SecretString.
+func NewSecret(s string) SecretString { return SecretString{v: s} }
+
+// Value returns the raw secret (only call when actually needed for auth).
+func (s SecretString) Value() string { return s.v }
+
+// String implements fmt.Stringer — always returns "[REDACTED]".
+func (s SecretString) String() string { return "[REDACTED]" }
+
+// GoString implements fmt.GoStringer — prevents leakage via %#v.
+func (s SecretString) GoString() string { return "email.SecretString([REDACTED])" }
+
+// EmailPriority classifies an email's urgency.
 type EmailPriority string
 
 const (
@@ -34,7 +46,7 @@ const (
 	PrioritySpam   EmailPriority = "spam"
 )
 
-// Email represents a single email message
+// Email represents a single email message.
 type Email struct {
 	ID          string
 	From        string
@@ -49,55 +61,56 @@ type Email struct {
 	Replied     bool
 	Archived    bool
 	ReceivedAt  time.Time
-	Summary     string // LLM-generated summary
+	Summary     string   // LLM-generated summary
 	ActionItems []string // LLM-extracted action items
 }
 
-// AutoRule defines an automatic email handling rule
+// AutoRule defines an automatic email handling rule.
 type AutoRule struct {
 	Name      string
 	Condition func(*Email) bool
 	Action    func(*Email) error
 }
 
-// EmailConfig holds connection settings
+// EmailConfig holds IMAP/SMTP connection settings.
+// Password is a SecretString — it will never appear in logs.
 type EmailConfig struct {
-	IMAPHost   string
-	IMAPPort   int
-	SMTPHost   string
-	SMTPPort   int
-	Username   string
-	Password   string
-	TLS        bool
-	Simulated  bool
+	IMAPHost  string
+	IMAPPort  int
+	SMTPHost  string
+	SMTPPort  int
+	Username  string
+	Password  SecretString // masked in fmt/log output
+	TLS       bool
+	Simulated bool
 }
 
-// EmailAgent manages email operations for NEXUS
+// EmailAgent manages email operations for NEXUS.
 type EmailAgent struct {
-	cfg       EmailConfig
-	mu        sync.Mutex
-	inbox     []*Email
-	sent      []*Email
-	rules     []AutoRule
+	cfg        EmailConfig
+	mu         sync.Mutex
+	inbox      []*Email
+	sent       []*Email
+	rules      []AutoRule
 	redactKeys []string
 }
 
-// New creates an EmailAgent
+// New creates an EmailAgent.
 func New(cfg EmailConfig) *EmailAgent {
 	return &EmailAgent{
-		cfg: cfg,
+		cfg:        cfg,
 		redactKeys: []string{"password", "secret", "token", "api_key", "apikey", "bearer", "auth"},
 	}
 }
 
-// AddRule adds an automatic handling rule
+// AddRule adds an automatic handling rule.
 func (e *EmailAgent) AddRule(rule AutoRule) {
 	e.mu.Lock()
 	e.rules = append(e.rules, rule)
 	e.mu.Unlock()
 }
 
-// Classify assigns a priority to an email based on signals
+// Classify assigns a priority to an email based on keyword signals.
 func Classify(email *Email) EmailPriority {
 	subject := strings.ToLower(email.Subject)
 	body := strings.ToLower(email.Body)
@@ -124,7 +137,7 @@ func Classify(email *Email) EmailPriority {
 	return PriorityNormal
 }
 
-// Redact removes sensitive values from email content before LLM processing
+// Redact removes sensitive values from email content before LLM processing.
 func (e *EmailAgent) Redact(text string) string {
 	for _, key := range e.redactKeys {
 		lines := strings.Split(text, "\n")
@@ -141,7 +154,7 @@ func (e *EmailAgent) Redact(text string) string {
 	return text
 }
 
-// IngestSimulated adds emails directly (for testing + demos)
+// IngestSimulated adds emails directly (for testing and demos).
 func (e *EmailAgent) IngestSimulated(emails []*Email) {
 	e.mu.Lock()
 	for _, email := range emails {
@@ -151,7 +164,7 @@ func (e *EmailAgent) IngestSimulated(emails []*Email) {
 	e.mu.Unlock()
 }
 
-// ProcessRules runs all auto-rules against unread emails
+// ProcessRules runs all auto-rules against unread, non-archived emails.
 func (e *EmailAgent) ProcessRules() []string {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -171,12 +184,46 @@ func (e *EmailAgent) ProcessRules() []string {
 	return actions
 }
 
-// Send sends an email via SMTP
+// sanitiseHeader strips \r and \n from an email header value to prevent
+// SMTP header injection (CVE class: email header injection).
+func sanitiseHeader(s string) string {
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	return s
+}
+
+// validateRecipient returns an error if the address looks malformed.
+func validateRecipient(addr string) error {
+	if !strings.Contains(addr, "@") {
+		return fmt.Errorf("email: invalid recipient address %q (missing @)", addr)
+	}
+	if strings.ContainsAny(addr, "\r\n") {
+		return fmt.Errorf("email: recipient address contains illegal characters")
+	}
+	return nil
+}
+
+// Send sends an email via SMTP (or records it in simulation mode).
 func (e *EmailAgent) Send(from string, to []string, subject, body string) error {
+	// Sanitise header fields to prevent SMTP injection.
+	from = sanitiseHeader(from)
+	subject = sanitiseHeader(subject)
+	sanitised := make([]string, 0, len(to))
+	for _, addr := range to {
+		if err := validateRecipient(addr); err != nil {
+			return err
+		}
+		sanitised = append(sanitised, sanitiseHeader(addr))
+	}
+	to = sanitised
+
 	if e.cfg.Simulated {
 		sent := &Email{
-			ID: fmt.Sprintf("sent-%d", time.Now().UnixNano()),
-			From: from, To: to, Subject: subject, Body: body,
+			ID:         fmt.Sprintf("sent-%d", time.Now().UnixNano()),
+			From:       from,
+			To:         to,
+			Subject:    subject,
+			Body:       body,
 			ReceivedAt: time.Now(),
 		}
 		e.mu.Lock()
@@ -188,45 +235,45 @@ func (e *EmailAgent) Send(from string, to []string, subject, body string) error 
 }
 
 func (e *EmailAgent) smtpSend(from string, to []string, subject, body string) error {
-	auth := smtp.PlainAuth("", e.cfg.Username, e.cfg.Password, e.cfg.SMTPHost)
+	auth := smtp.PlainAuth("", e.cfg.Username, e.cfg.Password.Value(), e.cfg.SMTPHost)
 	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s",
 		from, strings.Join(to, ","), subject, body)
 	addr := fmt.Sprintf("%s:%d", e.cfg.SMTPHost, e.cfg.SMTPPort)
 	if e.cfg.TLS {
 		conn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: e.cfg.SMTPHost})
 		if err != nil {
-			return err
+			return fmt.Errorf("email: tls dial: %w", err)
 		}
 		defer conn.Close()
 		client, err := smtp.NewClient(conn, e.cfg.SMTPHost)
 		if err != nil {
-			return err
+			return fmt.Errorf("email: smtp client: %w", err)
 		}
 		if err = client.Auth(auth); err != nil {
-			return err
+			return fmt.Errorf("email: auth: %w", err)
 		}
 		if err = client.Mail(from); err != nil {
-			return err
+			return fmt.Errorf("email: MAIL FROM: %w", err)
 		}
 		for _, recipient := range to {
 			if err = client.Rcpt(recipient); err != nil {
-				return err
+				return fmt.Errorf("email: RCPT TO %s: %w", recipient, err)
 			}
 		}
 		w, err := client.Data()
 		if err != nil {
-			return err
+			return fmt.Errorf("email: DATA: %w", err)
 		}
 		_, err = fmt.Fprint(w, msg)
 		if err != nil {
-			return err
+			return fmt.Errorf("email: write body: %w", err)
 		}
 		return w.Close()
 	}
 	return smtp.SendMail(addr, auth, from, to, []byte(msg))
 }
 
-// Inbox returns unarchived emails sorted by priority
+// Inbox returns unarchived emails.
 func (e *EmailAgent) Inbox() []*Email {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -239,7 +286,7 @@ func (e *EmailAgent) Inbox() []*Email {
 	return result
 }
 
-// FormatDigest returns a short email summary for the daily digest
+// FormatDigest returns a short email summary for the daily digest.
 func (e *EmailAgent) FormatDigest() string {
 	inbox := e.Inbox()
 	if len(inbox) == 0 {
