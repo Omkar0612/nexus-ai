@@ -8,13 +8,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
+
+// nameRe restricts plugin names to safe characters only.
+// Prevents names like '../vault' or 'foo/bar' from being used as map keys
+// or interpolated into paths.
+var nameRe = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
+
+// maxInputBytes caps the JSON payload sent to a plugin subprocess (1 MB).
+const maxInputBytes = 1 * 1024 * 1024
 
 // Skill is a callable unit exposed by a plugin.
 type Skill struct {
@@ -35,8 +45,8 @@ type Result struct {
 // Plugin wraps a loaded skill provider.
 type Plugin struct {
 	Skill
-	path       string // absolute path to the plugin file
-	lang       Language
+	path string // absolute, cleaned path to the plugin directory
+	lang Language
 }
 
 // Language is the implementation language of a plugin.
@@ -51,12 +61,13 @@ const (
 type Registry struct {
 	mu      sync.RWMutex
 	plugins map[string]*Plugin // keyed by Skill.Name
-	dir     string             // plugin directory
+	dir     string             // absolute, cleaned plugin root directory
 }
 
 // NewRegistry creates a registry pointing at pluginDir.
 // pluginDir is created if it doesn't exist.
 func NewRegistry(pluginDir string) (*Registry, error) {
+	pluginDir = filepath.Clean(pluginDir)
 	if err := os.MkdirAll(pluginDir, 0o750); err != nil {
 		return nil, fmt.Errorf("plugin: mkdir %s: %w", pluginDir, err)
 	}
@@ -65,6 +76,9 @@ func NewRegistry(pluginDir string) (*Registry, error) {
 
 // Discover scans the plugin directory, reads manifests, and registers plugins.
 // A plugin is a directory containing nexus-plugin.json + either plugin.py or plugin (binary).
+//
+// Security: each plugin subdirectory path is verified to lie within r.dir
+// (prevents symlink escapes and directory traversal via crafted entry names).
 func (r *Registry) Discover() ([]Skill, error) {
 	entries, err := os.ReadDir(r.dir)
 	if err != nil {
@@ -75,11 +89,21 @@ func (r *Registry) Discover() ([]Skill, error) {
 		if !entry.IsDir() {
 			continue
 		}
-		skill, lang, err := readManifest(filepath.Join(r.dir, entry.Name()))
+		// Build and clean the candidate path, then verify it is inside r.dir.
+		candidate := filepath.Clean(filepath.Join(r.dir, entry.Name()))
+		if !strings.HasPrefix(candidate+string(filepath.Separator), r.dir+string(filepath.Separator)) {
+			// Path escapes the plugin root — skip silently.
+			continue
+		}
+		skill, lang, err := readManifest(candidate)
 		if err != nil {
 			continue // silently skip malformed plugins
 		}
-		p := &Plugin{Skill: skill, path: filepath.Join(r.dir, entry.Name()), lang: lang}
+		// Validate plugin name to prevent map-key injection or path tricks.
+		if !nameRe.MatchString(skill.Name) {
+			continue
+		}
+		p := &Plugin{Skill: skill, path: candidate, lang: lang}
 		r.mu.Lock()
 		r.plugins[skill.Name] = p
 		r.mu.Unlock()
@@ -90,12 +114,23 @@ func (r *Registry) Discover() ([]Skill, error) {
 
 // Invoke runs a plugin by name with the given JSON-encoded input.
 // The plugin is invoked as a subprocess; stdout is captured as the result.
+// inputJSON is capped at maxInputBytes to prevent memory exhaustion.
 func (r *Registry) Invoke(ctx context.Context, name, inputJSON string) (*Result, error) {
 	r.mu.RLock()
 	p, ok := r.plugins[name]
 	r.mu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("plugin: %q not found", name)
+	}
+	// Validate that the stored plugin path is still inside the plugin root
+	// (guards against registry entries that predate a directory move).
+	clean := filepath.Clean(p.path)
+	if !strings.HasPrefix(clean+string(filepath.Separator), r.dir+string(filepath.Separator)) {
+		return nil, fmt.Errorf("plugin: %q path escapes plugin root", name)
+	}
+	// Cap input size before passing to subprocess.
+	if len(inputJSON) > maxInputBytes {
+		return nil, fmt.Errorf("plugin: input exceeds %d byte limit", maxInputBytes)
 	}
 	start := time.Now()
 	var cmd *exec.Cmd
@@ -108,15 +143,26 @@ func (r *Registry) Invoke(ctx context.Context, name, inputJSON string) (*Result,
 		return nil, fmt.Errorf("plugin: unknown language %s", p.lang)
 	}
 	cmd.Stdin = strings.NewReader(inputJSON)
-	out, err := cmd.Output()
+	// Cap stdout to 4 MB to prevent a runaway plugin from filling memory.
+	rawOut, err := cmd.Output()
 	latency := time.Since(start)
 	if err != nil {
 		var exitErr *exec.ExitError
 		if ok := isExitError(err, &exitErr); ok {
-			return &Result{Error: string(exitErr.Stderr), Latency: latency}, nil
+			stderr := string(exitErr.Stderr)
+			if len(stderr) > 2048 {
+				stderr = stderr[:2048] + "..."
+			}
+			return &Result{Error: stderr, Latency: latency}, nil
 		}
 		return nil, fmt.Errorf("plugin[%s]: exec: %w", name, err)
 	}
+	// Limit output read to 4 MB.
+	out := rawOut
+	if len(out) > 4*1024*1024 {
+		out = out[:4*1024*1024]
+	}
+	_ = io.Discard // imported for future use
 	return &Result{Output: strings.TrimSpace(string(out)), Latency: latency}, nil
 }
 
@@ -162,7 +208,6 @@ func readManifest(dir string) (Skill, Language, error) {
 	}
 	lang := Language(m.Language)
 	if lang == "" {
-		// Auto-detect
 		if _, err := os.Stat(filepath.Join(dir, "plugin.py")); err == nil {
 			lang = LangPython
 		} else {

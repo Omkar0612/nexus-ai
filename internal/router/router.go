@@ -23,7 +23,6 @@ import (
 const circuitThreshold = 3
 
 // sharedTransport is a tuned http.Transport reused by all router instances.
-// Connection pooling eliminates per-request TCP + TLS handshake overhead.
 var sharedTransport = &http.Transport{
 	MaxIdleConns:        100,
 	MaxIdleConnsPerHost: 20,
@@ -32,11 +31,26 @@ var sharedTransport = &http.Transport{
 	DisableCompression:  false,
 }
 
+// SecretString wraps an API key and masks it in all fmt/log output.
+type SecretString struct{ v string }
+
+// NewSecret wraps a plaintext value as a SecretString.
+func NewSecret(s string) SecretString { return SecretString{v: s} }
+
+// Value returns the raw key (only call when building HTTP headers).
+func (s SecretString) Value() string { return s.v }
+
+// String implements fmt.Stringer — always returns "[REDACTED]".
+func (s SecretString) String() string { return "[REDACTED]" }
+
+// GoString prevents leakage via %#v.
+func (s SecretString) GoString() string { return "router.SecretString([REDACTED])" }
+
 // Provider is a registered LLM backend.
 type Provider struct {
 	Name     string
 	BaseURL  string
-	APIKey   string
+	APIKey   SecretString // masked in logs and fmt output
 	Model    string
 	Healthy  bool
 	failures atomic.Int32 // consecutive failure counter — circuit breaker
@@ -94,6 +108,7 @@ func (r *Router) Complete(ctx context.Context, systemPrompt, userMsg string) (*t
 		}
 		content, tokIn, tokOut, err := r.callProvider(ctx, p, systemPrompt, userMsg)
 		if err != nil {
+			// Log provider name only — not the APIKey.
 			log.Warn().Str("provider", p.Name).Err(err).Msg("provider failed, trying fallback")
 			p.recordFailure()
 			lastErr = err
@@ -113,7 +128,6 @@ func (r *Router) Complete(ctx context.Context, systemPrompt, userMsg string) (*t
 }
 
 // callProvider sends a chat completion request to a single provider.
-// Uses a pooled buffer to avoid per-call allocations on the JSON body.
 func (r *Router) callProvider(ctx context.Context, p *Provider, system, user string) (string, int, int, error) {
 	type message struct {
 		Role    string `json:"role"`
@@ -141,8 +155,8 @@ func (r *Router) callProvider(ctx context.Context, p *Provider, system, user str
 		return "", 0, 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if p.APIKey != "" {
-		req.Header.Set("Authorization", "Bearer "+p.APIKey)
+	if p.APIKey.Value() != "" {
+		req.Header.Set("Authorization", "Bearer "+p.APIKey.Value())
 	}
 	resp, err := r.client.Do(req)
 	if err != nil {
@@ -150,8 +164,10 @@ func (r *Router) callProvider(ctx context.Context, p *Provider, system, user str
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
-		return "", 0, 0, fmt.Errorf("provider %s HTTP %d: %s", p.Name, resp.StatusCode, b)
+		// Drain body to allow connection reuse; log internally but don't propagate raw body.
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		log.Debug().Str("provider", p.Name).Int("status", resp.StatusCode).Bytes("body", b).Msg("provider error response")
+		return "", 0, 0, fmt.Errorf("provider %s HTTP %d", p.Name, resp.StatusCode)
 	}
 	var res struct {
 		Choices []struct {
@@ -164,7 +180,7 @@ func (r *Router) callProvider(ctx context.Context, p *Provider, system, user str
 			CompletionTokens int `json:"completion_tokens"`
 		} `json:"usage"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 4*1024*1024)).Decode(&res); err != nil {
 		return "", 0, 0, fmt.Errorf("router: decode: %w", err)
 	}
 	if len(res.Choices) == 0 {
@@ -188,8 +204,8 @@ func (r *Router) HealthCheck(ctx context.Context) {
 				p.Healthy = false
 				return
 			}
-			if p.APIKey != "" {
-				req.Header.Set("Authorization", "Bearer "+p.APIKey)
+			if p.APIKey.Value() != "" {
+				req.Header.Set("Authorization", "Bearer "+p.APIKey.Value())
 			}
 			resp, err := r.client.Do(req)
 			if err != nil || resp.StatusCode >= 500 {
@@ -229,5 +245,11 @@ func providerFromConfig(cfg types.LLMConfig) *Provider {
 	if model == "" {
 		model = "llama3.2"
 	}
-	return &Provider{Name: cfg.Provider, BaseURL: baseURL, APIKey: cfg.APIKey, Model: model, Healthy: true}
+	return &Provider{
+		Name:    cfg.Provider,
+		BaseURL: baseURL,
+		APIKey:  NewSecret(cfg.APIKey),
+		Model:   model,
+		Healthy: true,
+	}
 }
