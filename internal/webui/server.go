@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/Omkar0612/nexus-ai/internal/telemetry"
+	"github.com/rs/zerolog"
 )
 
 //go:embed static/*
@@ -18,6 +18,7 @@ type Server struct {
 	logger zerolog.Logger
 }
 
+// New creates a Server. Pass zerolog.Nop() in tests.
 func New(addr string, log zerolog.Logger) *Server {
 	return &Server{
 		addr:   addr,
