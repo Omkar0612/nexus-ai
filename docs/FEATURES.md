@@ -7,135 +7,120 @@ All features shipped. All free. All open-source.
 ## Core Features (v1.0)
 
 ### 🔴 Drift Detector
-Silently monitors your conversation history for work drift signals.
-- Detects stalled tasks (mentioned but never completed)
-- Detects missed follow-ups ("follow up with X" — never resolved)
-- Detects repetitive failures (same error 3+ times)
+- Detects stalled tasks, missed follow-ups, repetitive failures
 - **CLI:** `nexus drift`
 
 ### 🔧 Self-Healing Agent
-Auto-diagnoses and retries broken tasks.
-- Captures full error context on failure
-- Attempts automatic retry with LLM root-cause analysis
-- Escalates to user after max retries with plain-language diagnosis
+- Auto-diagnoses and retries broken tasks
 - **CLI:** `nexus health`
 
 ### 🎭 Emotional Intelligence
-Detects your emotional state and adapts NEXUS tone accordingly.
-- Detects: frustrated, urgent, stressed, excited, confused, neutral
-- Adapts: verbosity, formality, response style, emoji usage
-- Zero configuration — works automatically
+- Detects frustration/stress/excitement and adapts tone
 
 ### 🎯 Goal Tracker
-Tracks your long-term goals and aligns every response.
-- Infers goals from conversation (no setup needed)
-- Warns when a task is misaligned with your declared goals
-- Reports goals you haven't worked toward in 7+ days
+- Tracks long-term goals, warns on misalignment
 - **CLI:** `nexus goals list` | `nexus goals set "goal"`
 
 ### 👋 Session Briefer
-Proactive context briefing when you return after being away.
-- Summarises where you left off
-- Surfaces high-priority drift signals
-- Suggests 3 quick actions to resume
-- Triggers after 30+ minutes away
+- Context briefing after 30+ min away
 
 ### 📚 Adaptive Learner
-Learns your workflow patterns and personalises every response.
-- Tracks which agents, topics, and formats you prefer
-- Automatically adjusts LLM system prompts to match your style
+- Learns your patterns, personalises every response
 - **CLI:** `nexus insights`
 
 ### 🔐 Privacy Vault
-AES-256-GCM encrypted local secrets manager.
-- Stores API keys, passwords, tokens encrypted at rest
-- Auto-redacts secret values from all LLM prompts
-- Personal and business privacy zones
-- **CLI:** `nexus vault set KEY value` | `nexus vault get KEY` | `nexus vault list`
+- AES-256-GCM encrypted local secrets
+- **CLI:** `nexus vault set KEY value` | `nexus vault get KEY`
 
 ### 🎭 Persona Engine
-6 switchable AI work modes.
-| Persona | Best For |
-|---|---|
-| `default` | General use |
-| `work` | Focused, professional, code-heavy |
-| `creative` | Brainstorming, ideation |
-| `client` | Client-facing, no internal data |
-| `focus` | Deep work, 200-word cap |
-| `research` | Thorough, cited, academic |
+- 6 switchable modes: default, work, creative, client, focus, research
 - **CLI:** `nexus persona use work`
 
 ### 📡 Offline Mode
-Full functionality without internet.
-- Auto-detects connectivity loss
-- Switches all LLM calls to local Ollama automatically
-- Queues tasks and flushes when back online
+- Auto-switches to Ollama, queues tasks
 
 ---
 
 ## v1.1 Features
 
 ### 💰 Token Cost Tracker
-Real-time token cost tracking with budget protection.
-- Built-in pricing for Groq, Anthropic, OpenAI, Ollama (Feb 2026)
-- Daily and monthly budget caps with auto-pause
-- Telegram alert before and when budget is breached
-- Suggests cheaper model alternatives automatically
+- Real-time cost with budget caps + Telegram alerts
 - **CLI:** `nexus cost report` | `nexus budget set --daily 1.00`
 
 ### 📋 Audit Log
-Fully queryable agent decision log — know WHY NEXUS did anything.
-- Records: action, rationale, context used, alternatives considered
-- Auto-classifies risk level (low/medium/high)
-- Human-in-loop approval tracking
-- JSON export for compliance
-- **CLI:** `nexus audit show` | `nexus audit show --risk high` | `nexus audit export`
+- Queryable decision log with rationale + risk classification
+- **CLI:** `nexus audit show` | `nexus audit show --risk high`
 
 ### 🔁 Loop Detector
-Detects and breaks infinite agent loops before they waste tokens.
-- Monitors tool call patterns in real-time
-- Fires after 3 identical (tool, input) pairs
-- Estimates tokens and cost saved by catching the loop
-- Suggests specific fixes based on tool type
+- Breaks infinite agent loops before they burn tokens
 
 ---
 
 ## v1.2 Features
 
 ### 🤥 Hallucination Detector
-Local self-check on every LLM response. Zero external API cost.
-- Extracts factual claims (dates, numbers, URLs, assertions)
-- Cross-references against memory for contradictions
 - Tags every response: ✅ VERIFIED | 💡 UNCERTAIN | ⚠️ UNVERIFIED | 🚨 CONTRADICTED
-- Auto-retry hint if confidence below threshold
-- Works fully offline
+- Zero external API, works offline
 
 ### ⏰ Smart Scheduler
-Timezone-aware cron with condition-based triggers.
-- Timezone-aware scheduling (Dubai, UTC, any IANA zone)
-- Condition-based: only run IF a condition is true
-  - `FileExistsCondition("/tmp/report.csv")` — run only if file appears
-  - Custom conditions: price threshold, API response, any Go function
-- Missed-run detection with configurable catch-up
-- Per-job retry policy with exponential backoff
+- Timezone-aware cron + condition-based triggers
+- `FileExistsCondition`, custom Go conditions, retry backoff
 - **CLI:** `nexus heartbeat add "name" "0 9 * * *" "task"`
 
 ### 📁 Knowledge Base (RAG)
-RAG over your own files. Zero external API. Zero cost.
-- Drop `.md`, `.txt`, `.go`, `.py`, `.json`, `.toml` into `~/.nexus/kb/`
-- Auto-indexed on file change
-- TF-IDF similarity search (no embedding API needed)
-- Context auto-injected into every relevant LLM call
-- Works fully offline
-- **CLI:** `nexus kb add file.md` | `nexus kb search "query"` | `nexus kb stats`
+- TF-IDF search over `~/.nexus/kb/` files, offline, zero cost
+- **CLI:** `nexus kb stats` | `nexus kb search "query"`
 
 ---
 
-## Roadmap (v1.3)
+## v1.3 Features
 
-- [ ] 🤝 Multi-Agent Bus — spawn and coordinate sub-agents
-- [ ] 📊 Daily Intelligence Digest — automated morning briefing
-- [ ] 🌍 Timezone Context — time-aware task deferral
-- [ ] 🔐 HITL Gate — Telegram approval for high-risk actions
-- [ ] 🗣️ Voice Interface — speak to NEXUS via microphone
-- [ ] 🌐 Browser Agent — autonomous web browsing
+### 🤖 Multi-Agent Bus
+Coordinate specialised sub-agents over a typed message bus.
+- Roles: Researcher, Coder, Writer, Analyst, Reviewer
+- Auto-routes tasks to best-fit agent based on keywords
+- Broadcast to all agents in parallel
+- Loop detection built into the bus
+- **CLI:** `nexus agent bus list` | `nexus agent route "task"`
+
+### 🌅 Daily Intelligence Digest
+Automated morning briefing from all NEXUS systems.
+- Pulls: drift signals, goals, cost summary, audit highlights, scheduled jobs
+- Priority tiers: 🔴 high / 🟡 medium / 🟢 low
+- Formats: Telegram Markdown, CLI, JSON
+- **CLI:** `nexus digest` | `nexus digest --json`
+
+### 🔐 HITL Gate (Human-in-the-Loop)
+Approval gate for high-risk agent actions.
+- Low risk: auto-execute | Medium: audit log | High: Telegram approval
+- Timeout = safe cancel (fail-closed)
+- Emergency lock: blocks ALL non-low-risk actions instantly
+- **CLI:** `nexus hitl approve <id>` | `nexus hitl reject <id>` | `nexus hitl lock`
+
+### 🎤 Voice Interface
+Speak to NEXUS, hear it speak back.
+- Wake word detection ("Hey NEXUS")
+- Push-to-talk mode
+- Whisper transcription (local, offline)
+- TTS: espeak or piper (local, offline)
+- Simulated mode for CI/testing
+- **CLI:** `nexus voice start` | `nexus voice status`
+
+### 🌐 Browser Agent
+Autonomous web browsing.
+- Navigate, click, fill forms, extract text, screenshot
+- Safety allowlist + blocked hosts (no localhost/internal)
+- Visit limiter (loop protection)
+- Task planner converts natural language → action sequence
+- **CLI:** `nexus browse "go to https://example.com and extract text"`
+
+---
+
+## v1.4 Roadmap
+
+- [ ] 📊 Analytics Dashboard — web UI for cost, audit, goals, agent stats
+- [ ] 📞 Phone Call Agent — make and receive calls via Twilio
+- [ ] 📧 Email Agent — read, reply, draft emails via IMAP/SMTP
+- [ ] 📝 Note-taking Agent — auto-capture and organise meeting notes
+- [ ] 🤝 GitHub Agent — open issues, review PRs, create branches autonomously
+- [ ] 📱 Mobile Companion — NEXUS on iOS/Android via Telegram bot
