@@ -107,7 +107,7 @@ func (kb *KnowledgeBase) IndexDirectory() error {
 		}
 		if existing, ok := kb.docs[path]; ok {
 			if !info.ModTime().After(existing.IndexedAt) {
-				return nil // not modified
+				return nil
 			}
 		}
 		return kb.IndexFile(path)
@@ -245,7 +245,7 @@ func (kb *KnowledgeBase) WatchAndReindex(interval time.Duration) {
 // chunkDocument splits a document's content into overlapping chunks.
 // Handles edge cases:
 //   - content shorter than chunkSize: produces exactly one chunk
-//   - content shorter than overlap: start is clamped to 0, loop exits
+//   - content shorter than overlap: start is clamped, loop exits
 func (kb *KnowledgeBase) chunkDocument(doc *Document) []Chunk {
 	text := doc.Content
 	if len(text) == 0 {
@@ -265,10 +265,8 @@ func (kb *KnowledgeBase) chunkDocument(doc *Document) []Chunk {
 			Text:   chunkText,
 			Tokens: tokenize(chunkText),
 		})
-		// Advance start with overlap, clamped to avoid negative or non-progressing index
 		nextStart := end - kb.overlap
 		if nextStart <= start {
-			// Content fits in one chunk or overlap >= chunkSize: done
 			break
 		}
 		start = nextStart
@@ -276,6 +274,9 @@ func (kb *KnowledgeBase) chunkDocument(doc *Document) []Chunk {
 	return chunks
 }
 
+// rebuildIDF recomputes inverse document frequency for all indexed terms.
+// Uses (n+2)/(freq+1) smoothing so that IDF is always positive, even
+// when the corpus contains only a single document/chunk.
 func (kb *KnowledgeBase) rebuildIDF() {
 	df := make(map[string]int)
 	n := 0
@@ -292,7 +293,9 @@ func (kb *KnowledgeBase) rebuildIDF() {
 		}
 	}
 	for term, freq := range df {
-		kb.idf[term] = math.Log(float64(n+1) / float64(freq+1))
+		// +2 in numerator ensures log result > 0 even for single-doc corpora:
+		// log((1+2)/(1+1)) = log(1.5) ≈ 0.405 > 0
+		kb.idf[term] = math.Log(float64(n+2) / float64(freq+1))
 	}
 }
 

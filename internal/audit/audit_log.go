@@ -36,8 +36,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// sqliteTimeFormat is the format SQLite uses for CURRENT_TIMESTAMP and datetime comparisons
-const sqliteTimeFormat = "2006-01-02 15:04:05"
+// sqliteTimeFormat stores timestamps with microsecond precision.
+// Using full precision avoids collisions when two entries are recorded
+// within the same second (e.g. in tests with Since-based filtering).
+const sqliteTimeFormat = "2006-01-02 15:04:05.000000"
 
 // RiskLevel classifies the risk of an agent action
 type RiskLevel string
@@ -111,7 +113,7 @@ func (l *Log) migrate() error {
 			approved_by  TEXT DEFAULT 'auto',
 			duration_ms  INTEGER DEFAULT 0,
 			meta         TEXT DEFAULT '{}',
-			created_at   TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
+			created_at   TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now'))
 		);
 		CREATE INDEX IF NOT EXISTS idx_audit_user  ON audit_log(user_id, created_at);
 		CREATE INDEX IF NOT EXISTS idx_audit_risk  ON audit_log(risk);
@@ -130,7 +132,7 @@ func (l *Log) Record(entry AuditEntry) error {
 	}
 	altsJSON, _ := json.Marshal(entry.Alternatives)
 	metaJSON, _ := json.Marshal(entry.Meta)
-	// Store created_at explicitly as SQLite-compatible string (UTC)
+	// Store with microsecond precision for correct Since/Until comparisons
 	createdAtStr := entry.CreatedAt.UTC().Format(sqliteTimeFormat)
 	_, err := l.db.Exec(
 		`INSERT INTO audit_log
@@ -162,7 +164,6 @@ func (l *Log) Query(q AuditQuery) ([]AuditEntry, error) {
 		args = append(args, string(q.Risk))
 	}
 	if !q.Since.IsZero() {
-		// Format as SQLite string for correct TEXT column comparison
 		where = append(where, "created_at >= ?")
 		args = append(args, q.Since.UTC().Format(sqliteTimeFormat))
 	}
@@ -203,7 +204,6 @@ func (l *Log) Query(q AuditQuery) ([]AuditEntry, error) {
 		e.Risk = RiskLevel(risk)
 		_ = json.Unmarshal([]byte(altsJSON), &e.Alternatives)
 		_ = json.Unmarshal([]byte(metaJSON), &e.Meta)
-		// Parse the stored string back to time.Time
 		if t, err := time.ParseInLocation(sqliteTimeFormat, createdAtStr, time.UTC); err == nil {
 			e.CreatedAt = t
 		}
