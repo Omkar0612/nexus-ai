@@ -15,8 +15,8 @@ import (
 
 func newTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	log := zerolog.Nop()
-	srv := New(":0", log)
+	// Pass nil router — chat.go uses stub response when router is nil
+	srv := New(":0", zerolog.Nop(), nil)
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/chat", srv.handleChat)
 	mux.HandleFunc("GET /api/events", srv.hub.ServeHTTP)
@@ -29,13 +29,11 @@ func newTestServer(t *testing.T) *httptest.Server {
 func TestHealthEndpoint(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
-
 	resp, err := http.Get(ts.URL + "/api/health")
 	if err != nil {
 		t.Fatalf("health request failed: %v", err)
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
 	}
@@ -44,13 +42,11 @@ func TestHealthEndpoint(t *testing.T) {
 func TestChatEndpointBadBody(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
-
 	resp, err := http.Post(ts.URL+"/api/chat", "application/json", bytes.NewBufferString("not-json"))
 	if err != nil {
 		t.Fatalf("chat request failed: %v", err)
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", resp.StatusCode)
 	}
@@ -59,18 +55,15 @@ func TestChatEndpointBadBody(t *testing.T) {
 func TestChatEndpointStreaming(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
-
 	body, _ := json.Marshal(chatReq{Message: "hello"})
 	resp, err := http.Post(ts.URL+"/api/chat", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		t.Fatalf("chat request failed: %v", err)
 	}
 	defer resp.Body.Close()
-
 	if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "text/event-stream") {
 		t.Errorf("expected text/event-stream, got %s", ct)
 	}
-
 	scanner := bufio.NewScanner(resp.Body)
 	var chunks []string
 	for scanner.Scan() {
@@ -89,7 +82,6 @@ func TestSSEHubPublish(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(hub.ServeHTTP))
 	defer ts.Close()
 
-	// Connect SSE client — reads only real AgentEvents (skips ping)
 	clientDone := make(chan AgentEvent, 1)
 	go func() {
 		resp, err := http.Get(ts.URL)
@@ -109,7 +101,7 @@ func TestSSEHubPublish(t *testing.T) {
 			if err := json.Unmarshal([]byte(data), &evt); err != nil {
 				continue
 			}
-			// Skip the initial ping (empty agent field)
+			// Skip ping (empty agent)
 			if evt.Agent == "" {
 				continue
 			}
@@ -118,9 +110,7 @@ func TestSSEHubPublish(t *testing.T) {
 		}
 	}()
 
-	// Give client time to connect and receive ping
 	time.Sleep(100 * time.Millisecond)
-
 	hub.Publish(AgentEvent{Agent: "calendar", Status: "running", Message: "syncing"})
 
 	select {
