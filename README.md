@@ -4,7 +4,6 @@
 
 <br/>
 
-<!-- Animated typing SVG -->
 <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;CLI+%E2%80%A2+Telegram+%E2%80%A2+Voice+%E2%80%A2+Email+%E2%80%A2+Phone;Multi-agent+%E2%80%A2+Offline+%E2%80%A2+AES-256+Vault" alt="Typing SVG" />
 
 <br/><br/>
@@ -23,7 +22,7 @@
 
 <br/>
 
-[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🆓 Free LLMs](#-free-llm-providers) · [📺 Demo](#-demo) · [📋 Changelog](#-changelog) · [🤝 Contribute](#-built-by-the-community)
+[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🆓 Free LLMs](#-free-llm-providers) · [📺 Demo](#-demo) · [📋 Changelog](#-changelog) · [🔮 Roadmap](ROADMAP.md) · [🤝 Contribute](#-built-by-the-community)
 
 </div>
 
@@ -312,6 +311,33 @@ Detects connectivity loss. Switches to local Ollama. Queues outbound tasks. Sync
 
 ---
 
+## 🔮 Roadmap — Replacing $289/mo of paid tools
+
+<div align="center">
+
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=17&duration=3500&pause=1200&color=F59E0B&center=true&vCenter=true&width=700&lines=ChatGPT+%2B+Notion+%2B+Grammarly+%2B+Midjourney+%2B+Cursor...;One+binary.+Zero+cost.+Forever.;%F0%9F%91%89+See+the+full+roadmap" alt="roadmap typing" />
+
+</div>
+
+<br/>
+
+```
+v1.5  ████████░░░░░░░░░░░░  40%   Plugin SDK · Calendar Agent · Vision · Semantic Memory
+v1.6  ░░░░░░░░░░░░░░░░░░░░   0%   Web UI · Mobile App · Browser Extension · Desktop App
+v1.7  ░░░░░░░░░░░░░░░░░░░░   0%   Image · Voice Synthesis · Video · Music · Writing Studio
+v1.8  ░░░░░░░░░░░░░░░░░░░░   0%   Code Copilot (LSP) · DevOps Agent · Code Search
+v1.9  ░░░░░░░░░░░░░░░░░░░░   0%   Finance · Health · CRM · Learning · Travel Agents
+v2.0  ░░░░░░░░░░░░░░░░░░░░   0%   NEXUS OS — AI layer for everything
+```
+
+<div align="center">
+
+**[📖 Read the full ROADMAP →](ROADMAP.md)**
+
+</div>
+
+---
+
 ## 📋 Changelog
 
 <details open>
@@ -358,20 +384,6 @@ Detects connectivity loss. Switches to local Ollama. Queues outbound tasks. Sync
 - 🎭 **Persona Engine** — Work / Focus / Client / Research modes
 - 📴 **Offline Mode** — local Ollama fallback + task queue
 - ⚖️ **Load Balancer** — 3-node cluster with health checks and auto-failover
-
-</details>
-
-<details>
-<summary><b>🔮 Roadmap — v1.5+</b></summary>
-
-<br/>
-
-- [ ] 🧩 **Plugin SDK** — write your own NEXUS skills in Go or Python
-- [ ] 🗓️ **Calendar Agent** — Google Calendar + Outlook integration
-- [ ] 🖼️ **Vision Agent** — analyse screenshots and images in context
-- [ ] 💬 **Slack / Discord** — additional companion channels
-- [ ] 🔎 **Semantic Memory Search** — vector embeddings for long-term recall
-- [ ] 📦 **Homebrew + apt install** — one-line install on any machine
 
 </details>
 
