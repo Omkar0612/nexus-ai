@@ -4,13 +4,13 @@ package agents
 MultiAgentBus — spawn and coordinate specialised sub-agents over a central message bus.
 
 The next frontier of AI agent systems (GitHub Blog, Feb 2026):
-'Multi-agent workflows fail because there’s no coordination layer.'
+'Multi-agent workflows fail because there's no coordination layer.'
 — github.blog/ai-and-ml, Feb 23 2026
 
 NEXUS MultiAgentBus:
   1. Typed agent roles: Researcher, Coder, Writer, Analyst, Reviewer
   2. Central message bus — agents pass structured messages, not raw strings
-  3. Role enforcement — agents can’t do work outside their role
+  3. Role enforcement — agents can't do work outside their role
   4. Task router — auto-routes tasks to the best-fit agent
   5. Result aggregator — merges outputs from parallel agents
   6. Timeout protection — stalled sub-agents are cancelled automatically
@@ -31,11 +31,11 @@ import (
 type AgentRole string
 
 const (
-	RoleResearcher AgentRole = "researcher"
-	RoleCoder      AgentRole = "coder"
-	RoleWriter     AgentRole = "writer"
-	RoleAnalyst    AgentRole = "analyst"
-	RoleReviewer   AgentRole = "reviewer"
+	RoleResearcher   AgentRole = "researcher"
+	RoleCoder        AgentRole = "coder"
+	RoleWriter       AgentRole = "writer"
+	RoleAnalyst      AgentRole = "analyst"
+	RoleReviewer     AgentRole = "reviewer"
 	RoleOrchestrator AgentRole = "orchestrator"
 )
 
@@ -66,22 +66,22 @@ type AgentHandler func(ctx context.Context, msg BusMessage) (BusMessage, error)
 
 // SubAgent is a registered agent on the bus
 type SubAgent struct {
-	Role        AgentRole
-	Name        string
-	Description string
-	Handler     AgentHandler
+	Role         AgentRole
+	Name         string
+	Description  string
+	Handler      AgentHandler
 	Capabilities []string
-	Busy        bool
-	TaskCount   int
-	mu          sync.Mutex
+	Busy         bool
+	TaskCount    int
+	mu           sync.Mutex
 }
 
 // BusStats holds bus performance metrics
 type BusStats struct {
-	TotalMessages  int
-	TotalTasks     int
-	TotalErrors    int
-	AgentStats     map[AgentRole]int
+	TotalMessages int
+	TotalTasks    int
+	TotalErrors   int
+	AgentStats    map[AgentRole]int
 }
 
 // MultiAgentBus is the NEXUS central agent coordination system
@@ -135,9 +135,9 @@ func (b *MultiAgentBus) Send(ctx context.Context, msg BusMessage) (BusMessage, e
 	if isLoop {
 		log.Warn().Str("to", string(msg.To)).Msg("bus loop detected")
 		return BusMessage{
-			Type: MsgError,
-			From: RoleOrchestrator,
-			To:   msg.From,
+			Type:    MsgError,
+			From:    RoleOrchestrator,
+			To:      msg.From,
 			Payload: fmt.Sprintf("bus loop detected: %s", event.Format()),
 		}, fmt.Errorf("message loop detected on route to %s", msg.To)
 	}
@@ -224,19 +224,31 @@ func (b *MultiAgentBus) Route(ctx context.Context, task string) (BusMessage, err
 	})
 }
 
+// inferRole determines the best agent role for a task using keyword matching.
+// ORDERING IS CRITICAL: check multi-word / more-specific phrases first so they
+// are not swallowed by shorter single-word matches in later cases.
 func (b *MultiAgentBus) inferRole(task string) AgentRole {
 	lower := strings.ToLower(task)
 	switch {
-	case containsAny(lower, "search", "research", "find", "look up", "what is", "who is"):
-		return RoleResearcher
-	case containsAny(lower, "code", "write function", "implement", "debug", "fix bug", "refactor"):
+	// Reviewer: must come before coder ("code" appears in "review this code")
+	case containsAny(lower, "review", "check", "validate", "verify", "audit"):
+		return RoleReviewer
+	// Coder: multi-word phrases first, then single keywords
+	// Must come before writer ("write function" contains "write")
+	case containsAny(lower, "write function", "write a function", "implement", "debug",
+		"fix bug", "refactor", "code", "coding"):
 		return RoleCoder
+	// Analyst: before researcher to avoid 'data' matching 'find data'
+	case containsAny(lower, "analyse", "analyze", "compare", "chart", "trend", "report",
+		"metrics", "statistics"):
+		return RoleAnalyst
+	// Writer: single-word 'write' safe here since coder phrases already matched above
 	case containsAny(lower, "write", "draft", "summarise", "summarize", "explain", "document"):
 		return RoleWriter
-	case containsAny(lower, "analyse", "analyze", "compare", "data", "chart", "trend", "report"):
-		return RoleAnalyst
-	case containsAny(lower, "review", "check", "validate", "verify", "audit", "test"):
-		return RoleReviewer
+	// Researcher: catch-all for lookup / question tasks
+	case containsAny(lower, "search", "research", "find", "look up", "what is", "who is",
+		"data"):
+		return RoleResearcher
 	default:
 		return RoleResearcher
 	}

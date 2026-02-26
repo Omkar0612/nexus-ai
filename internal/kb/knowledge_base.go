@@ -45,19 +45,19 @@ type Document struct {
 
 // Chunk is a retrievable piece of a document
 type Chunk struct {
-	DocID     string
-	Index     int
-	Text      string
-	Tokens    []string // tokenised words for TF-IDF
-	Score     float64  // relevance score (set during search)
+	DocID  string
+	Index  int
+	Text   string
+	Tokens []string // tokenised words for TF-IDF
+	Score  float64  // relevance score (set during search)
 }
 
 // SearchResult holds a matching chunk with metadata
 type SearchResult struct {
-	Chunk     Chunk
-	DocTitle  string
-	DocPath   string
-	Score     float64
+	Chunk    Chunk
+	DocTitle string
+	DocPath  string
+	Score    float64
 }
 
 // KnowledgeBase manages local document indexing and retrieval
@@ -242,8 +242,15 @@ func (kb *KnowledgeBase) WatchAndReindex(interval time.Duration) {
 
 // --- internals ---
 
+// chunkDocument splits a document's content into overlapping chunks.
+// Handles edge cases:
+//   - content shorter than chunkSize: produces exactly one chunk
+//   - content shorter than overlap: start is clamped to 0, loop exits
 func (kb *KnowledgeBase) chunkDocument(doc *Document) []Chunk {
 	text := doc.Content
+	if len(text) == 0 {
+		return nil
+	}
 	var chunks []Chunk
 	start := 0
 	for i := 0; start < len(text); i++ {
@@ -258,10 +265,13 @@ func (kb *KnowledgeBase) chunkDocument(doc *Document) []Chunk {
 			Text:   chunkText,
 			Tokens: tokenize(chunkText),
 		})
-		start = end - kb.overlap
-		if start >= end {
+		// Advance start with overlap, clamped to avoid negative or non-progressing index
+		nextStart := end - kb.overlap
+		if nextStart <= start {
+			// Content fits in one chunk or overlap >= chunkSize: done
 			break
 		}
+		start = nextStart
 	}
 	return chunks
 }

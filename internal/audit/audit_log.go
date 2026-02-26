@@ -36,6 +36,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// sqliteTimeFormat is the format SQLite uses for CURRENT_TIMESTAMP and datetime comparisons
+const sqliteTimeFormat = "2006-01-02 15:04:05"
+
 // RiskLevel classifies the risk of an agent action
 type RiskLevel string
 
@@ -47,19 +50,19 @@ const (
 
 // AuditEntry is a single recorded agent decision
 type AuditEntry struct {
-	ID              string            `json:"id"`
-	UserID          string            `json:"user_id"`
-	Agent           string            `json:"agent"`
-	Action          string            `json:"action"`
-	Rationale       string            `json:"rationale"`
-	ContextUsed     string            `json:"context_used"`
-	Alternatives    []string          `json:"alternatives_considered"`
-	Outcome         string            `json:"outcome"`
-	Risk            RiskLevel         `json:"risk"`
-	ApprovedBy      string            `json:"approved_by"`     // "auto" or username
-	DurationMs      int64             `json:"duration_ms"`
-	Meta            map[string]string `json:"meta,omitempty"`
-	CreatedAt       time.Time         `json:"created_at"`
+	ID           string            `json:"id"`
+	UserID       string            `json:"user_id"`
+	Agent        string            `json:"agent"`
+	Action       string            `json:"action"`
+	Rationale    string            `json:"rationale"`
+	ContextUsed  string            `json:"context_used"`
+	Alternatives []string          `json:"alternatives_considered"`
+	Outcome      string            `json:"outcome"`
+	Risk         RiskLevel         `json:"risk"`
+	ApprovedBy   string            `json:"approved_by"`
+	DurationMs   int64             `json:"duration_ms"`
+	Meta         map[string]string `json:"meta,omitempty"`
+	CreatedAt    time.Time         `json:"created_at"`
 }
 
 // AuditQuery defines filters for querying the audit log
@@ -108,7 +111,7 @@ func (l *Log) migrate() error {
 			approved_by  TEXT DEFAULT 'auto',
 			duration_ms  INTEGER DEFAULT 0,
 			meta         TEXT DEFAULT '{}',
-			created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+			created_at   TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
 		);
 		CREATE INDEX IF NOT EXISTS idx_audit_user  ON audit_log(user_id, created_at);
 		CREATE INDEX IF NOT EXISTS idx_audit_risk  ON audit_log(risk);
@@ -127,14 +130,16 @@ func (l *Log) Record(entry AuditEntry) error {
 	}
 	altsJSON, _ := json.Marshal(entry.Alternatives)
 	metaJSON, _ := json.Marshal(entry.Meta)
+	// Store created_at explicitly as SQLite-compatible string (UTC)
+	createdAtStr := entry.CreatedAt.UTC().Format(sqliteTimeFormat)
 	_, err := l.db.Exec(
 		`INSERT INTO audit_log
-		 (id,user_id,agent,action,rationale,context_used,alternatives,outcome,risk,approved_by,duration_ms,meta)
-		 VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+		 (id,user_id,agent,action,rationale,context_used,alternatives,outcome,risk,approved_by,duration_ms,meta,created_at)
+		 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		entry.ID, entry.UserID, entry.Agent, entry.Action,
 		entry.Rationale, entry.ContextUsed, string(altsJSON),
 		entry.Outcome, string(entry.Risk), entry.ApprovedBy,
-		entry.DurationMs, string(metaJSON),
+		entry.DurationMs, string(metaJSON), createdAtStr,
 	)
 	return err
 }
@@ -157,12 +162,13 @@ func (l *Log) Query(q AuditQuery) ([]AuditEntry, error) {
 		args = append(args, string(q.Risk))
 	}
 	if !q.Since.IsZero() {
+		// Format as SQLite string for correct TEXT column comparison
 		where = append(where, "created_at >= ?")
-		args = append(args, q.Since)
+		args = append(args, q.Since.UTC().Format(sqliteTimeFormat))
 	}
 	if !q.Until.IsZero() {
 		where = append(where, "created_at <= ?")
-		args = append(args, q.Until)
+		args = append(args, q.Until.UTC().Format(sqliteTimeFormat))
 	}
 	if q.SearchStr != "" {
 		where = append(where, "(action LIKE ? OR rationale LIKE ?)")
@@ -186,18 +192,21 @@ func (l *Log) Query(q AuditQuery) ([]AuditEntry, error) {
 	var entries []AuditEntry
 	for rows.Next() {
 		var e AuditEntry
-		var altsJSON, metaJSON string
-		var risk string
+		var altsJSON, metaJSON, risk, createdAtStr string
 		if err := rows.Scan(
 			&e.ID, &e.UserID, &e.Agent, &e.Action, &e.Rationale,
 			&e.ContextUsed, &altsJSON, &e.Outcome, &risk,
-			&e.ApprovedBy, &e.DurationMs, &metaJSON, &e.CreatedAt,
+			&e.ApprovedBy, &e.DurationMs, &metaJSON, &createdAtStr,
 		); err != nil {
 			return nil, err
 		}
 		e.Risk = RiskLevel(risk)
 		_ = json.Unmarshal([]byte(altsJSON), &e.Alternatives)
 		_ = json.Unmarshal([]byte(metaJSON), &e.Meta)
+		// Parse the stored string back to time.Time
+		if t, err := time.ParseInLocation(sqliteTimeFormat, createdAtStr, time.UTC); err == nil {
+			e.CreatedAt = t
+		}
 		entries = append(entries, e)
 	}
 	return entries, rows.Err()
