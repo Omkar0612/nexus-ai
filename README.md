@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+CLI+%E2%80%A2+Telegram+%E2%80%A2+Voice+%E2%80%A2+Email;Multi-agent+%E2%80%A2+Offline+%E2%80%A2+AES-256+Vault" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Voice+%E2%80%A2+Writing+Studio;Multi-agent+%E2%80%A2+Offline+%E2%80%A2+AES-256+Vault" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -22,7 +22,7 @@
 
 <br/>
 
-[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🌐 Web UI](#-web-ui-new-in-v16) · [🆓 Free LLMs](#-free-llm-providers) · [📺 Demo](#-demo) · [📋 Changelog](#-changelog) · [🔮 Roadmap](ROADMAP.md) · [🤝 Contribute](#-built-by-the-community)
+[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🌐 Web UI](#-web-ui--v16) · [🎨 v1.7 Studio](#-v17-creative-studio) · [🆓 Free LLMs](#-free-llm-providers) · [📋 Changelog](#-changelog) · [🔮 Roadmap](ROADMAP.md)
 
 </div>
 
@@ -39,108 +39,222 @@ CGO_ENABLED=1 go build -tags ci ./...
 # 2. Add your free API key (console.groq.com — 60 sec signup)
 cp config/nexus.example.toml ~/.nexus/nexus.toml
 
-# 3. Run — Web UI opens at http://localhost:7070
+# 3. Run — Web UI at http://localhost:7070
 nexus start
 ```
 
 > 🆓 **No paid API needed.** Works with Groq (free), Gemini (free), Ollama (local), OpenRouter (free tier).
 
 <details>
-<summary><b>🌐 Web UI (new in v1.6) &rarr;</b></summary>
+<summary><b>🌐 Web UI flags &rarr;</b></summary>
 
 ```bash
-# Start with Web UI (default: http://localhost:7070)
-nexus start
-
-# Custom port
-nexus start --webui-addr :8080
-
-# CLI only, no Web UI
-nexus start --no-webui
-
-# Debug mode
-nexus start --debug
+nexus start                        # Web UI at :7070 (default)
+nexus start --webui-addr :8080     # Custom port
+nexus start --no-webui             # CLI only
+nexus start --debug                # Verbose logging
 ```
-
-The Web UI provides:
-- 💬 **Live chat** — stream responses word by word from your local LLM
-- 📡 **Agent activity feed** — real-time SSE stream of what every agent is doing
-- 🏥 **Health endpoint** — `GET /api/health` → `{"status":"ok","version":"1.6"}`
 
 </details>
 
 <details>
-<summary><b>🐳 Full cluster (Docker) &rarr;</b></summary>
+<summary><b>🎨 Image generation (v1.7) &rarr;</b></summary>
+
+```bash
+# Local Stable Diffusion (Automatic1111 running at :7860)
+nexus imagine "a futuristic Dubai skyline at sunset, cinematic"
+
+# Together AI free credits (FLUX.1-schnell)
+nexus imagine --backend together "logo for a tech startup, minimalist"
+
+# Output to file
+nexus imagine --output ./out.png "abstract neon waves"
+```
+
+</details>
+
+<details>
+<summary><b>🔊 Voice synthesis (v1.7) &rarr;</b></summary>
+
+```bash
+# System TTS (always free, no setup)
+nexus speak "Good morning, your briefing is ready"
+
+# Coqui TTS local server (http://localhost:5002)
+nexus speak --backend coqui --out briefing.wav "3 tasks today"
+
+# ElevenLabs free tier (10k chars/month)
+nexus speak --backend elevenlabs "Meeting in 10 minutes"
+```
+
+</details>
+
+<details>
+<summary><b>✍️ Writing Studio (v1.7) &rarr;</b></summary>
+
+```bash
+# Draft a blog post
+nexus write draft --topic "AI agents in 2026" --style professional --words 500
+
+# Proofread a file
+nexus write proofread --file report.md
+
+# Summarise to 100 words
+nexus write summarise --file meeting-notes.txt --words 100
+
+# Rewrite in casual tone
+nexus write rewrite --style casual --file email-draft.txt
+
+# Translate to Arabic
+nexus write translate --lang Arabic --file announcement.txt
+```
+
+</details>
+
+<details>
+<summary><b>🎵 Music generation (v1.7) &rarr;</b></summary>
+
+```bash
+# Local AudioCraft (Meta's free model)
+nexus music "upbeat lo-fi hip hop, 90 bpm" --duration 30s --out track.wav
+
+# Replicate API (free tier)
+nexus music --backend replicate "cinematic orchestral swell" --duration 15s
+```
+
+</details>
+
+<details>
+<summary><b>📅 Calendar agent (v1.5) &rarr;</b></summary>
+
+```bash
+# Today's schedule
+nexus calendar today
+
+# Check conflicts this week
+nexus calendar conflicts --week
+
+# Find next free 1-hour slot
+nexus calendar free --duration 1h
+
+# Morning digest
+nexus calendar digest
+```
+
+</details>
+
+<details>
+<summary><b>🔌 Plugin SDK (v1.5) &rarr;</b></summary>
+
+```go
+// Create a custom skill in 5 lines
+skill := plugin.NewSkill("weather", "Get current weather", func(in plugin.Input) plugin.Output {
+    return plugin.Output{Text: fetchWeather(in.Args["city"])}
+})
+nexus.Registry.Register(skill)
+```
+
+```bash
+nexus skills list          # List all registered plugins
+nexus skills run weather city=Dubai
+```
+
+</details>
+
+<details>
+<summary><b>🐳 Docker cluster &rarr;</b></summary>
 
 ```bash
 docker compose up -d
 # 3 load-balanced nodes + Ollama + n8n
-# Health checks every 10s. Dead nodes auto-removed.
-```
-
-</details>
-
-<details>
-<summary><b>📱 Telegram companion &rarr;</b></summary>
-
-```toml
-# ~/.nexus/nexus.toml
-[telegram]
-token            = "your-bot-token"
-allowed_user_ids = [your-telegram-id]
-admin_chat_id    = your-telegram-id
-```
-
-```bash
-nexus telegram start
-```
-
-```
-/chat    — talk to NEXUS from anywhere
-/drift   — what's stalled right now
-/digest  — your morning brief
-/approve — approve a high-risk action
-/vault   — retrieve a secret
 ```
 
 </details>
 
 ---
 
-## 🌐 Web UI — New in v1.6
+## 🌐 Web UI — v1.6
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  NEXUS AI  v1.6                              ● agents: 3 active │
+│  NEXUS AI  v1.7                              ● agents: 3 active │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │  You: research top 5 AI tools launched this week         │   │
-│  │                                                          │   │
-│  │  NEXUS: Here are the top 5 AI tools launched this        │   │
-│  │  week, analysed and ranked by practical utility...       │   │
-│  │  ▌                                               (live)  │   │
+│  │  You: generate an image of Dubai skyline at sunset       │   │
+│  │  NEXUS: ✅ Image saved → ./output/dubai-sunset.png       │   │
+│  │                                               (done)     │   │
 │  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
 │  📡 Agent Activity                                               │
-│  ● researcher  running   — fetching latest ProductHunt data      │
-│  ✓ analyst     done      — pricing comparison complete           │
-│  ✓ writer      done      — summary generated                     │
-│                                                                  │
+│  ● imagegen   running   — Stable Diffusion generating...         │
+│  ✓ writer     done      — caption generated                      │
 │  [ Type a message...                              ] [ Send ▶ ]  │
 └─────────────────────────────────────────────────────────────────┘
 ```
-
-**Stack:** `net/http` stdlib · `//go:embed` static assets · SSE event stream · zero JS frameworks
-
-**API endpoints:**
 
 | Method | Endpoint | Description |
 |:---:|:---|:---|
 | `POST` | `/api/chat` | Stream LLM response as SSE |
 | `GET` | `/api/events` | Live agent activity stream |
-| `GET` | `/api/health` | Health check + version |
+| `GET` | `/api/health` | `{"status":"ok","version":"1.7"}` |
 | `GET` | `/` | Embedded dark-mode UI |
+
+---
+
+## 🎨 v1.7 Creative Studio
+
+> *Replace Midjourney · ElevenLabs · Grammarly · Suno · ChatGPT — for free.*
+
+### 🖼️ Image Generation
+
+```bash
+# 1. Local Stable Diffusion (Automatic1111 at localhost:7860) — fully free, fully private
+nexus imagine "minimalist logo, purple gradient, tech startup"
+# ✅ Saved: output/nexus-1709123456.png  (4.2s)
+
+# 2. Together AI FLUX.1-schnell — free $25 credits (~500 images)
+nexus imagine --backend together --width 1024 --height 768 \
+  "Dubai Marina at golden hour, photorealistic, 8K"
+```
+
+### 🔊 Voice Synthesis
+
+```bash
+# Coqui TTS — 100% local, 30+ voices, no API key
+curl -s http://localhost:5002/api/tts?text=Hello > hello.wav
+
+# ElevenLabs — 10,000 chars/month FREE
+nexus speak --backend elevenlabs \
+  "Your daily briefing: 3 tasks, 2 meetings, cost $0.00"
+
+# System TTS — always works, zero setup
+nexus speak "Reminder: standup in 5 minutes"
+```
+
+### ✍️ Writing Studio
+
+```bash
+# Full writing pipeline — draft → proofread → translate
+nexus write draft --topic "Why AI agents beat SaaS tools" \
+  --style persuasive --words 800 --out article.md
+
+nexus write proofread --file article.md
+# CORRECTED: ...
+# ISSUE: Comma splice in paragraph 3
+# ISSUE: Passive voice in conclusion
+
+nexus write translate --lang Arabic --file article.md --out article-ar.md
+```
+
+### 🎵 Music Generation
+
+```bash
+# Meta AudioCraft (local, free) — requires Python bridge
+nexus music "calm lo-fi piano for focus work" --duration 60s --out focus.wav
+
+# Replicate MusicGen (free tier)
+nexus music --backend replicate \
+  "epic cinematic intro, orchestral, rising tension" --duration 20s
+```
 
 ---
 
@@ -148,312 +262,186 @@ nexus telegram start
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
 ║  $ nexus start                                               ║
-║                                                              ║
-║    NEXUS AI v1.6                                             ║
-║    Gateway : 127.0.0.1:7700                                  ║
-║    Web UI  : http://localhost:7070   ← open in browser       ║
-║                                                              ║
+║    NEXUS AI v1.7  •  Web UI: http://localhost:7070           ║
 ╠══════════════════════════════════════════════════════════════╣
-║                                                              ║
-║  $ nexus chat                                                ║
-║                                                              ║
-║  > research YC 2026 AI startups, analyse their pricing,      ║
-║    write a competitive brief, save as report.md              ║
-║                                                              ║
+║  $ nexus imagine "YC startup pitch deck cover, minimalist"   ║
+║  🖼️  Generating via Stable Diffusion...                      ║
+║  ✅  Saved: output/pitch-cover.png  (3.8s, $0.00)           ║
 ╠══════════════════════════════════════════════════════════════╣
-║                                                              ║
-║  🔍  Researcher  ──▶  fetching 14 YC profiles       [done]  ║
-║  📊  Analyst     ──▶  comparing pricing tiers       [done]  ║
-║  ✍️   Writer      ──▶  drafting executive summary   [done]  ║
-║  💾  File Agent  ──▶  writing report.md             [done]  ║
-║                                                              ║
+║  $ nexus write draft --topic "AI trends 2026" --words 600    ║
+║  ✍️  Drafting via Groq Llama 3.3 70B...                      ║
+║  ✅  Saved: output/ai-trends.md  (2.1s, $0.00)              ║
 ╠══════════════════════════════════════════════════════════════╣
-║  ✅  Done in 47 seconds.  Cost: $0.00                        ║
+║  $ nexus speak "Article ready for review"                    ║
+║  🔊  Speaking via system TTS...  ✅  Done                    ║
+╠══════════════════════════════════════════════════════════════╣
+║  $ nexus calendar today                                      ║
+║  🕐  09:00 — 10:00  Standup                                  ║
+║  🕐  14:00 — 15:30  Client call — 👥 client@example.com     ║
+║  ⚠️  CONFLICT: Standup overlaps with Focus Block (30 min)    ║
+╠══════════════════════════════════════════════════════════════╣
+║  Total cost today: $0.00                                     ║
 ╚══════════════════════════════════════════════════════════════╝
-```
-
-```
-╔═══════════════════════════════════╗
-║  🌅  Good morning, Omkar.         ║
-║                                   ║
-║  📈  Goals on track    3 / 4      ║
-║  ⚠️   Stalled tasks      1        ║
-║  💰  LLM cost today    $0.00      ║
-║  📚  New KB entries     2         ║
-║  📧  Unread emails      5         ║
-╚═══════════════════════════════════╝
-
-  💡 "nexus-api-refactor" stalled 2 days.
-     Resume or close it?
 ```
 
 ---
 
 ## ✨ Features
 
-<div align="center">
-<img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=6,11,20&height=3&section=header" width="100%"/>
-</div>
-
-<br/>
-
-### 🌐 Web UI Server
-> *Chat with NEXUS in your browser. Zero JS frameworks. Fully embedded.*
-
-A complete `net/http` server ships inside the binary via `//go:embed`. Open `http://localhost:7070` after `nexus start` — no separate frontend server, no Node.js, no build step.
-
-```bash
-# Stream a response from the API directly
-curl -X POST http://localhost:7070/api/chat \
-  -H 'Content-Type: application/json' \
-  -d '{"message": "summarise my tasks for today"}'
-
-# Watch live agent activity
-curl http://localhost:7070/api/events
-# data: {"agent":"researcher","status":"running","message":"fetching calendar"}
-# data: {"agent":"researcher","status":"done"}
-```
-
----
-
 ### 🔍 Drift Detector
-> *The only AI agent that notices when your own work is stalling.*
-
-Runs silently in the background. Monitors your conversation history for stalled tasks, missed follow-ups, and repetitive failures. Fires smart nudges — not spam.
+> *The only AI agent that notices when your work is stalling.*
 
 ```
 🔴 [HIGH]   'nexus-api-refactor' stalled — last touched 2 days ago
-             💡 Resume or close this task?
-
-🟡 [MEDIUM] Follow-up missed — 'ping client about invoice' (3 days ago)
-             💡 Did you follow up?
-
-🔴 [HIGH]   Same error mentioned 3× — 'connection refused'
-             💡 Let me help you solve this systematically
+🟡 [MEDIUM] Follow-up missed — 'ping client about invoice' (3 days)
+🔴 [HIGH]   Same error 3× — 'connection refused' → Let me fix this
 ```
-
----
 
 ### 🏥 Self-Healing Engine
 > *Fails once. Never twice.*
 
-When a task fails, NEXUS diagnoses the root cause, switches to a backup LLM provider, and retries — all without you touching a thing.
-
 ```
-⚠️  Task 'daily-briefing' failed (attempt 1/3)
-    ROOT CAUSE: Groq rate limit hit at 06:00 UTC
-    FIX: Switching to Gemini 2.0 Flash...
-         Retrying in 30s...
-✅  Task recovered successfully.
+⚠️  Task 'daily-briefing' failed — Groq rate limit
+    Switching to Gemini 2.0 Flash... Retrying in 30s...
+✅  Task recovered. Cost: $0.00
 ```
-
----
 
 ### 🛡️ Human-in-the-Loop Gate
-> *Smart trust, not blind execution.*
 
-Every action is risk-scored before execution. Low risk runs silently. Medium risk is logged. High risk — NEXUS asks you first.
-
-| Risk Level | Actions | Behaviour |
+| Risk | Examples | Behaviour |
 |:---:|:---|:---|
-| 🟢 Low | Read file, Search web, Chat | Silent execute |
-| 🟡 Medium | Write file, Send message | Execute + audit log |
-| 🔴 High | Delete data, Push to GitHub, Make call | Pause → ask you |
+| 🟢 Low | Read, Search, Chat | Silent execute |
+| 🟡 Medium | Write file, Send message | Execute + log |
+| 🔴 High | Delete, Push to GitHub, Call | Pause → ask |
 
----
-
-### 🧠 Memory & Knowledge Base
-> *Remembers everything. Forgets nothing.*
-
-- **Episodic memory** — full conversation history in local SQLite
-- **Knowledge base** — ingest docs, PDFs, URLs → semantic search
-- **Working memory** — in-session context window management
-- **Privacy Vault** — AES-256-GCM encrypted secrets, never sent to an LLM
-
----
+### 🧠 Memory & Semantic Search
+- **Episodic** — SQLite conversation history
+- **Semantic** — TF-IDF cosine similarity search (zero deps)
+- **Vault** — AES-256-GCM encrypted local secrets
 
 ### 🤖 Multi-Agent Bus
-> *The right agent for every job.*
-
-NEXUS automatically decomposes your request and routes it across specialised agents in parallel:
 
 ```mermaid
 graph LR
-    YOU([🧑 You]) --> HITL
-
-    HITL{🛡️ Risk Gate}
+    YOU([🧑 You]) --> HITL{🛡️ Risk Gate}
     HITL -->|low| AUTO[✅ Auto]
-    HITL -->|medium| AUDIT[📋 Audit]
     HITL -->|high| ASK[📱 Ask]
-
-    AUTO & AUDIT & ASK --> BUS
-
+    AUTO & ASK --> BUS
     subgraph BUS["🤖 Agent Bus"]
-        direction TB
-        R[🔍 Researcher]
-        C[💻 Coder]
-        W[✍️ Writer]
-        A[📊 Analyst]
-        V[👁️ Reviewer]
+        R[🔍 Research] & C[💻 Code] & W[✍️ Write]
+        A[📊 Analyse] & I[🖼️ Image] & M[🎵 Music]
     end
-
     BUS --> MEM[(🧠 Memory)]
-    BUS --> OUT([📤 Result → You])
+    BUS --> OUT([📤 Result])
 ```
-
----
-
-### 🎭 Emotional Intelligence
-> *Talks to you like a person, not a robot.*
-
-Detects frustration, urgency, or stress in your messages and adjusts its tone in real-time.
-
-```
-You:    "this is STILL not working ugh"
-NEXUS:  detects → frustrated + stressed
-        responds → empathetic, direct, solution-first
-        "Here's the exact fix: [answer]"
-        (no preamble, no filler)
-```
-
----
-
-### 🎤 Voice Interface
-> *Fully offline. No cloud. No subscription.*
-
-OpenAI Whisper runs locally for speech-to-text. Local TTS for responses. Works on a plane.
-
-```bash
-nexus voice start
-# 🎤 Listening...
-# "schedule a briefing for tomorrow morning"
-# ✅ Scheduled: daily-briefing at 07:00
-```
-
----
-
-### 📴 Offline Mode
-> *Loses internet. Keeps working.*
-
-Detects connectivity loss. Switches to local Ollama. Queues outbound tasks. Syncs everything when you're back online.
-
----
 
 ### 🌐 Integrations
 
-<div align="center">
-
-| Integration | What NEXUS can do |
+| Integration | Capability |
 |:---:|:---|
-| 🌐 **Web UI** | Chat, agent activity feed, health API — all at `localhost:7070` |
-| 📧 **Email** (IMAP/SMTP) | Read, classify, summarise, reply |
-| 🐙 **GitHub** | Create issues, open PRs, review code — HITL on destructive ops |
-| 📞 **Phone** (Twilio) | Call or SMS on your behalf |
+| 🌐 **Web UI** | Live chat + SSE agent feed at `localhost:7070` |
+| 🖼️ **Image Gen** | Stable Diffusion (local) · FLUX via Together AI |
+| 🔊 **Voice TTS** | Coqui (local) · ElevenLabs (10k/mo free) · System |
+| ✍️ **Writing** | Draft · Rewrite · Proofread · Translate |
+| 🎵 **Music** | AudioCraft (local) · MusicGen via Replicate |
+| 📅 **Calendar** | Google Calendar (free) · ICS files |
+| 🔌 **Plugins** | Custom skills via SDK, `NewSkill()` in 5 lines |
+| 📧 **Email** | IMAP/SMTP read, classify, summarise, reply |
+| 🐙 **GitHub** | Issues, PRs, code review with HITL gate |
+| 📞 **Phone** | Call / SMS via Twilio |
 | 📱 **Telegram** | Full remote control from your phone |
-| 🌐 **Browser** | Fetch and read any webpage, inject into context |
-| ⚙️ **n8n** | Trigger any n8n workflow as a NEXUS skill |
-| 📝 **Notes** | Capture, search, export meeting notes |
 | 📊 **Dashboard** | Live analytics at `localhost:7700` |
-
-</div>
 
 ---
 
 ## 🆓 Free LLM Providers
 
-<div align="center">
-
-| Provider | Model | Speed | Daily Limit | Cost |
+| Provider | Model | Speed | Limit | Cost |
 |:---:|:---:|:---:|:---:|:---:|
-| ![Groq](https://img.shields.io/badge/Groq-F55036?style=flat-square&logo=groq&logoColor=white) | Llama 3.3 70B | ⚡ 300 tok/s | Unlimited | ![free](https://img.shields.io/badge/-free-22c55e?style=flat-square) |
-| ![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=flat-square&logo=google&logoColor=white) | 2.0 Flash | ⚡ Fast | 1M tokens/day | ![free](https://img.shields.io/badge/-free-22c55e?style=flat-square) |
-| ![Ollama](https://img.shields.io/badge/Ollama-000000?style=flat-square&logoColor=white) | Any model | 🖥️ Local | Unlimited | ![free](https://img.shields.io/badge/-free-22c55e?style=flat-square) |
-| ![OpenRouter](https://img.shields.io/badge/OpenRouter-6C47FF?style=flat-square&logoColor=white) | Multiple | ⚡ Fast | Free tier | ![free tier](https://img.shields.io/badge/-free%20tier-22c55e?style=flat-square) |
-| ![Together](https://img.shields.io/badge/Together_AI-FF6B6B?style=flat-square&logoColor=white) | Multiple | ⚡ Fast | $25 credits | ![credits](https://img.shields.io/badge/-\$25%20credits-f59e0b?style=flat-square) |
-
-</div>
+| ![Groq](https://img.shields.io/badge/Groq-F55036?style=flat-square) | Llama 3.3 70B | ⚡ 300 tok/s | Unlimited | Free |
+| ![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=flat-square) | 2.0 Flash | ⚡ Fast | 1M tok/day | Free |
+| ![Ollama](https://img.shields.io/badge/Ollama-000000?style=flat-square) | Any model | 🖥️ Local | Unlimited | Free |
+| ![OpenRouter](https://img.shields.io/badge/OpenRouter-6C47FF?style=flat-square) | Multiple | ⚡ Fast | Free tier | Free |
+| ![Together](https://img.shields.io/badge/Together-FF6B6B?style=flat-square) | FLUX/Multiple | ⚡ Fast | $25 credits | Free |
 
 ---
 
 ## ⚔️ NEXUS vs The World
 
-<div align="center">
-
 | Capability | NEXUS | AutoGPT | CrewAI | n8n AI | LangChain |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| Fixes its own failures | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Detects stalled work | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Risk gate before every action | ✅ | ⚠️ | ⚠️ | ⚠️ | ❌ |
-| Works fully offline | ✅ | ❌ | ❌ | ❌ | ❌ |
-| AES-256 local secrets vault | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Browser-based Web UI | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Reads your email | ✅ | ❌ | ⚠️ | ⚠️ | ❌ |
-| Calls your phone | ✅ | ❌ | ❌ | ⚠️ | ❌ |
-| Reads your tone | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 3-node load-balanced cluster | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Morning briefing | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Self-healing failures | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Drift detection | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Risk gate (HITL) | ✅ | ⚠️ | ⚠️ | ⚠️ | ❌ |
+| Offline mode | ✅ | ❌ | ❌ | ❌ | ❌ |
+| AES-256 secrets vault | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Web UI (embedded) | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Image generation | ✅ | ❌ | ❌ | ⚠️ | ❌ |
+| Voice synthesis | ✅ | ❌ | ❌ | ❌ | ❌ |
+| AI writing studio | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Music generation | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Calendar agent | ✅ | ❌ | ❌ | ⚠️ | ❌ |
+| Plugin SDK | ✅ | ⚠️ | ✅ | ✅ | ✅ |
+| Email / Phone / Telegram | ✅ | ❌ | ❌ | ⚠️ | ❌ |
+| Single binary, Go | ✅ | ❌ | ❌ | ❌ | ❌ |
 | 100% free to run | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Written in Go (fast + single binary) | ✅ | ❌ | ❌ | ❌ | ❌ |
-
-</div>
 
 ---
 
 ## 🔮 Roadmap — Replacing $289/mo of paid tools
 
-<div align="center">
-
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=17&duration=3500&pause=1200&color=F59E0B&center=true&vCenter=true&width=700&lines=ChatGPT+%2B+Notion+%2B+Grammarly+%2B+Midjourney+%2B+Cursor...;One+binary.+Zero+cost.+Forever.;%F0%9F%91%89+See+the+full+roadmap" alt="roadmap typing" />
-
-</div>
-
-<br/>
-
 ```
-v1.5  ██████████████████░░  90%   Plugin SDK · Calendar Agent · Vision · Semantic Memory
-v1.6  ████████████████████ 100%  ✅ Web UI · SSE Agent Feed · Desktop Scaffold · CI fixed
-v1.7  ░░░░░░░░░░░░░░░░░░░░   0%   Image · Voice Synthesis · Video · Music · Writing Studio
-v1.8  ░░░░░░░░░░░░░░░░░░░░   0%   Code Copilot (LSP) · DevOps Agent · Code Search
-v1.9  ░░░░░░░░░░░░░░░░░░░░   0%   Finance · Health · CRM · Learning · Travel Agents
-v2.0  ░░░░░░░░░░░░░░░░░░░░   0%   NEXUS OS — AI layer for everything
+v1.5  ████████████████████ 100%  ✅ Calendar · Vision · Semantic Search · Plugin SDK · Google Cal
+v1.6  ████████████████████ 100%  ✅ Web UI · SSE · Desktop Scaffold · CI hardened
+v1.7  ██████████░░░░░░░░░░  50%  🔨 Image Gen · Voice TTS · Writing Studio · Music (scaffolded)
+v1.8  ░░░░░░░░░░░░░░░░░░░░   0%  Code Copilot (LSP) · DevOps Agent · Code Search
+v1.9  ░░░░░░░░░░░░░░░░░░░░   0%  Finance · Health · CRM · Learning · Travel Agents
+v2.0  ░░░░░░░░░░░░░░░░░░░░   0%  NEXUS OS — AI layer for everything
 ```
-
-<div align="center">
 
 **[📖 Read the full ROADMAP →](ROADMAP.md)**
-
-</div>
 
 ---
 
 ## 📋 Changelog
 
 <details open>
-<summary><b>v1.6 — Web UI · Desktop Scaffold · CI Hardening</b> &nbsp;🆕</summary>
+<summary><b>v1.7 — Image Gen · Voice TTS · Writing Studio · Music</b> &nbsp;🆕 (in progress)</summary>
 
 <br/>
 
-- 🌐 **Web UI Server** — dark-mode chat interface embedded in the binary (`//go:embed`), zero external deps
-- 💬 **Streaming Chat** — `POST /api/chat` streams LLM response word-by-word as Server-Sent Events
-- 📡 **SSE Agent Activity Bus** — `GET /api/events` streams live agent state changes to any connected client
-- 🖥️ **Desktop Scaffold** — system tray + global hotkey (`Ctrl+Shift+Space`) + clipboard monitor stub (v1.7)
-- 🔧 **CLI flags** — `nexus start --webui-addr :7070`, `--no-webui`, `--debug`
-- 🏗️ **CI hardened** — `-tags ci` build strategy, desktop stub for headless runners, clean dep chain
-- 🐛 **Bug fixes** — `TestDetectConflicts` event overlap, `TestSSEHubPublish` ping skip, `zerolog` import
+- 🖼️ **Image Generation** — Stable Diffusion (local A1111) + Together AI FLUX.1-schnell (free credits); save to PNG
+- 🔊 **Voice Synthesis** — Coqui TTS (local) + ElevenLabs free tier (10k chars/mo) + system `say`/`espeak` fallback
+- ✍️ **Writing Studio** — Draft, Rewrite, Summarise, Proofread, Expand, Translate (backed by LLM router, $0 cost)
+- 🎵 **Music Generation** — Meta AudioCraft bridge (local) + Replicate MusicGen (free tier); silent-WAV stub for CI
+- 🧪 **Tests** — `imagegen_test.go` (httptest SD mock), `music_test.go` (stub WAV validation)
 
 </details>
 
 <details>
-<summary><b>v1.5 — Calendar · Vision · Semantic Memory · Plugin SDK</b></summary>
+<summary><b>v1.5 — Calendar · Vision · Semantic Search · Plugin SDK</b> &nbsp;✅ complete</summary>
 
 <br/>
 
-- 📅 **Calendar Agent** — natural language scheduling, conflict detection, free-slot finder, morning digest
-- 👁️ **Vision Agent** — describe images, extract text (OCR), detect objects via local model
-- 🧠 **Semantic Memory** — cosine similarity search across all past conversations and KB entries
-- 🔌 **Plugin SDK** — build and register new NEXUS skills as Go plugins
+- 📅 **Calendar Agent** — `Today()`, `Week()`, `FindFreeSlot()`, `DetectConflicts()`, `DigestLines()`, Google Calendar OAuth2 provider
+- 👁️ **Vision Agent** — describe images, extract text (OCR), detect objects via local LLaVA (Ollama) or Together AI
+- 🧠 **Semantic Search** — TF-IDF cosine similarity index, zero external deps, `Add()` → `Rebuild()` → `Search(query, topK)`
+- 🔌 **Plugin SDK** — `Plugin` interface + `NewSkill()` helper + `Registry` with `Register()`, `Execute()`, `List()`
+- 🗂️ **Google Calendar provider** — full `ListEvents()`, `CreateEvent()`, `UpdateEvent()`, `DeleteEvent()` against REST API
+- 🧪 **Tests** — `semantic_test.go`, `plugin_test.go`, calendar conflict detection
+
+</details>
+
+<details>
+<summary><b>v1.6 — Web UI · Desktop Scaffold · CI Hardening</b> &nbsp;✅ complete</summary>
+
+<br/>
+
+- 🌐 **Web UI** — dark-mode chat, `//go:embed`, zero JS frameworks, SSE streaming
+- 📡 **SSE Agent Bus** — `GET /api/events` broadcasts live agent state changes
+- 🖥️ **Desktop** — system tray + hotkey (`Ctrl+Shift+Space`) + clipboard stub (v1.7)
+- 🏗️ **CI** — `-tags ci` build, desktop no-op stub, clean dep chain (no broken proxy entries)
 
 </details>
 
@@ -462,45 +450,20 @@ v2.0  ░░░░░░░░░░░░░░░░░░░░   0%   NEXUS 
 
 <br/>
 
-- 📊 **Analytics Dashboard** — live cost, agent activity, goal progress at `localhost:7700`
-- 📞 **Phone Agent** — call or SMS via Twilio with HITL confirmation
-- 📧 **Email Agent** — read, classify, summarise and reply via IMAP/SMTP
-- 📝 **Notes Agent** — capture, tag, search and export meeting notes
-- 🐙 **GitHub Agent** — issues, PRs, branches; HITL gate on all destructive ops
-- 📱 **Telegram Companion** — full remote control from your phone
-- 🐛 **Hallucination Detector** — cross-checks LLM outputs before presenting results
-- 🔁 **Loop Detector** — breaks infinite agent loops automatically
-- 🧠 **Adaptive Learner** — personalises prompts based on your interaction patterns
+- 📊 Analytics Dashboard · 📞 Phone Agent · 📧 Email Agent · 📝 Notes Agent
+- 🐙 GitHub Agent · 📱 Telegram Companion
+- 🐛 Hallucination Detector · 🔁 Loop Detector · 🧠 Adaptive Learner
 
 </details>
 
 <details>
-<summary><b>v1.3 — Multi-Agent Bus · Daily Digest · Voice · Browser</b></summary>
+<summary><b>v1.0–1.3 — Core Intelligence</b></summary>
 
 <br/>
 
-- 🤖 **Multi-Agent Bus** — Researcher, Coder, Writer, Analyst, Reviewer working in parallel
-- 🌅 **Daily Digest** — automated morning briefing with goals, drift, and cost summary
-- 🛡️ **HITL Gate** — risk-scored approval gate before every action
-- 🎤 **Voice Interface** — offline Whisper STT + local TTS
-- 🌐 **Browser Agent** — fetch and read any URL, inject into context
-
-</details>
-
-<details>
-<summary><b>v1.0–1.2 — Core Intelligence</b></summary>
-
-<br/>
-
-- 🔍 **Drift Detector** — stalled tasks, missed follow-ups, repetitive failures
-- 🏥 **Self-Healing** — auto-retry with LLM provider switching
-- 🎭 **Emotional Intelligence** — tone detection + adaptive responses
-- 🎯 **Goal Tracker** — persistent goals with deviation warnings
-- 📬 **Session Briefing** — smart catch-up when you return after absence
-- 🔐 **Privacy Vault** — AES-256-GCM local secrets manager
-- 🎭 **Persona Engine** — Work / Focus / Client / Research modes
-- 📴 **Offline Mode** — local Ollama fallback + task queue
-- ⚖️ **Load Balancer** — 3-node cluster with health checks and auto-failover
+- 🔍 Drift Detector · 🏥 Self-Healing · 🎭 Emotional Intelligence
+- 🎯 Goal Tracker · 🔐 Privacy Vault · 📴 Offline Mode · ⚖️ Load Balancer
+- 🤖 Multi-Agent Bus · 🌅 Daily Digest · 🎤 Voice Interface · 🌐 Browser Agent
 
 </details>
 
@@ -510,9 +473,7 @@ v2.0  ░░░░░░░░░░░░░░░░░░░░   0%   NEXUS 
 
 ```bash
 git clone https://github.com/Omkar0612/nexus-ai
-# Pick an issue labelled 'good first issue'
-# Build a new skill (browser, phone, email are great examples)
-# Open a PR
+# Pick 'good first issue' → build a skill → open a PR
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) · Most wanted: **new skills · free API integrations · use-case examples**
