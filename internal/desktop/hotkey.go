@@ -1,3 +1,6 @@
+//go:build !ci
+// +build !ci
+
 package desktop
 
 import (
@@ -8,7 +11,6 @@ import (
 )
 
 // watchHotkeys registers Ctrl+Shift+Space as the NEXUS quick-prompt trigger.
-// Runs in a dedicated goroutine — exits cleanly when ctx is cancelled.
 func (d *Desktop) watchHotkeys(ctx context.Context) {
 	hk := hotkey.New(
 		[]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift},
@@ -24,7 +26,6 @@ func (d *Desktop) watchHotkeys(ctx context.Context) {
 	for {
 		select {
 		case <-hk.Keydown():
-			// TODO: open command palette overlay via webui signal channel
 			log.Println("[desktop] NEXUS hotkey triggered")
 			openBrowser(d.webuiAddr)
 		case <-ctx.Done():
