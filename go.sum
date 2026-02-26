@@ -1,8 +1,0 @@
-github.com/fsnotify/fsnotify v1.7.0 h1:8JEaixa0ERHlyふ/go-sqlite3 v1.14.22 h1:2cSwLofioKhn7BIgSj2vxo3cqk1rOKn3Gb1xQQjN7dk=
-github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:SnH4H8nfAKJHpNBSaUGi0gBgOqmfpGNeMgfqDorYMPk=
-github.com/rs/zerolog v1.32.0 h1:keLypqEpBKd/wMYSc/F48aHHAqiKVa1H2AAOF8MBxuk=
-github.com/rs/zerolog v1.32.0/go.mod h1:7frBqO0oezxmnO7GF86FY++uy8I0Tk/If5ni1G9Qc0U=
-github.com/spf13/cobra v1.8.0 h1:7aJaZx1B85qltLMc546zn58bgVOqr/8x7WRa1hDo0JU=
-github.com/spf13/cobra v1.8.0/go.mod h1:WXLWApfZ71AjXPya3WOlMsY9yMs7YeiHhFVlvLyhcho=
-github.com/spf13/viper v1.18.2 h1:qilot4gFBvHQTMxrxQT7S17W1HLVBWLAZjjPH0uHQVw=
-github.com/spf13/viper v1.18.2/go.mod h1:EKmWIqdnk5lOcmR72yw6hS+8OPYcwD0jteitLMVB+yk=
