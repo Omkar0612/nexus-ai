@@ -89,36 +89,42 @@ func TestSSEHubPublish(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(hub.ServeHTTP))
 	defer ts.Close()
 
-	// Connect SSE client
-	clientDone := make(chan string, 1)
+	// Connect SSE client — reads only real AgentEvents (skips ping)
+	clientDone := make(chan AgentEvent, 1)
 	go func() {
 		resp, err := http.Get(ts.URL)
 		if err != nil {
-			clientDone <- ""
+			clientDone <- AgentEvent{}
 			return
 		}
 		defer resp.Body.Close()
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {
 			line := scanner.Text()
-			if strings.HasPrefix(line, "data: ") {
-				clientDone <- strings.TrimPrefix(line, "data: ")
-				return
+			if !strings.HasPrefix(line, "data: ") {
+				continue
 			}
+			data := strings.TrimPrefix(line, "data: ")
+			var evt AgentEvent
+			if err := json.Unmarshal([]byte(data), &evt); err != nil {
+				continue
+			}
+			// Skip the initial ping (empty agent field)
+			if evt.Agent == "" {
+				continue
+			}
+			clientDone <- evt
+			return
 		}
 	}()
 
-	// Give client time to connect
-	time.Sleep(50 * time.Millisecond)
+	// Give client time to connect and receive ping
+	time.Sleep(100 * time.Millisecond)
 
 	hub.Publish(AgentEvent{Agent: "calendar", Status: "running", Message: "syncing"})
 
 	select {
-	case got := <-clientDone:
-		var evt AgentEvent
-		if err := json.Unmarshal([]byte(got), &evt); err != nil {
-			t.Fatalf("invalid JSON from SSE: %v — raw: %s", err, got)
-		}
+	case evt := <-clientDone:
 		if evt.Agent != "calendar" || evt.Status != "running" {
 			t.Errorf("unexpected event: %+v", evt)
 		}
