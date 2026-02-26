@@ -35,6 +35,7 @@ var (
 	t10 = time.Date(2026, 3, 1, 10, 0, 0, 0, time.UTC)
 	t11 = time.Date(2026, 3, 1, 11, 0, 0, 0, time.UTC)
 	t12 = time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
+	t13 = time.Date(2026, 3, 1, 13, 0, 0, 0, time.UTC)
 )
 
 func TestRangeSorted(t *testing.T) {
@@ -58,8 +59,8 @@ func TestRangeSorted(t *testing.T) {
 func TestDetectConflicts(t *testing.T) {
 	events := []Event{
 		{ID: "1", Start: t9, End: t11},
-		{ID: "2", Start: t10, End: t12}, // overlaps by 1h
-		{ID: "3", Start: t11, End: t12}, // no overlap with 1
+		{ID: "2", Start: t10, End: t12}, // overlaps with 1 by 1h
+		{ID: "3", Start: t12, End: t13}, // starts when 2 ends — no overlap with anyone
 	}
 	agent := makeAgent(nil)
 	conflicts := agent.DetectConflicts(events)
@@ -77,12 +78,10 @@ func TestFindFreeSlot(t *testing.T) {
 		{ID: "2", Start: t11, End: t12},
 	}
 	agent := makeAgent(events)
-	// Ask for 30-min slot starting at t9
 	slot, err := agent.FindFreeSlot(context.Background(), 30*time.Minute, 8*time.Hour, t9)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// First free slot should be at or after t12
 	if slot.Before(t12) {
 		t.Errorf("expected free slot at or after %s, got %s", t12, slot)
 	}
