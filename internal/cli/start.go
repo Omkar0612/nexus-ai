@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -27,7 +26,7 @@ func init() {
 	startCmd.Flags().String("host", "127.0.0.1", "Bind host")
 	startCmd.Flags().String("webui-addr", ":7070", "Web UI listen address (e.g. :7070)")
 	startCmd.Flags().BoolP("no-tui", "n", false, "Disable terminal UI")
-	startCmd.Flags().BoolP("no-webui", "", false, "Disable web UI")
+	startCmd.Flags().Bool("no-webui", false, "Disable web UI")
 }
 
 func runStart(cmd *cobra.Command, args []string) error {
@@ -51,7 +50,6 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Println()
 
-	// Boot LLM router with default Ollama (user can override via config/env)
 	llmCfg := types.LLMConfig{
 		Provider:   "ollama",
 		Model:      "llama3.2",
@@ -61,7 +59,6 @@ func runStart(cmd *cobra.Command, args []string) error {
 	r := router.New(llmCfg)
 	log.Info().Str("provider", llmCfg.Provider).Str("model", llmCfg.Model).Msg("LLM router ready")
 
-	// Boot Web UI
 	if !noWebUI {
 		srv := webui.New(webuiAddr, log.Logger, r)
 		go func() {
@@ -74,12 +71,9 @@ func runStart(cmd *cobra.Command, args []string) error {
 
 	log.Info().Int("port", port).Str("host", host).Msg("NEXUS daemon running — Ctrl+C to stop")
 
-	// Wait for interrupt
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-
 	log.Info().Msg("NEXUS shutting down gracefully")
-	_ = context.Background() // keep context import used for future shutdown hooks
 	return nil
 }

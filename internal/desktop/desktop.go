@@ -6,13 +6,12 @@ package desktop
 import (
 	"context"
 
-	"github.com/getlantern/systray"
+	"github.com/fyne-io/systray"
 )
 
 // Desktop manages the system tray, global hotkey, and clipboard monitor.
-// Run() must be called from the main OS thread.
 type Desktop struct {
-	webuiAddr string // e.g. "http://localhost:7070"
+	webuiAddr string
 	cancel    context.CancelFunc
 }
 
