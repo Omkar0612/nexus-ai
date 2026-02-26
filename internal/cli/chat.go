@@ -53,14 +53,12 @@ func runChat(cmd *cobra.Command, args []string) error {
 }
 
 func printHelp() {
-	fmt.Println(`
-Commands:
-  drift       — run drift detection scan
-  goals       — show your tracked goals
-  health      — show system health report
-  insights    — show usage insights
-  persona     — switch persona (work/creative/client/focus/research)
-  vault list  — list stored secrets
-  exit        — quit NEXUS chat
-`)
+	fmt.Print("Commands:\n" +
+		"  drift       — run drift detection scan\n" +
+		"  goals       — show your tracked goals\n" +
+		"  health      — show system health report\n" +
+		"  insights    — show usage insights\n" +
+		"  persona     — switch persona (work/creative/client/focus/research)\n" +
+		"  vault list  — list stored secrets\n" +
+		"  exit        — quit NEXUS chat\n")
 }
