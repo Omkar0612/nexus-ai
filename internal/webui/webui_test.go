@@ -1,0 +1,128 @@
+package webui
+
+import (
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/rs/zerolog"
+)
+
+func newTestServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	log := zerolog.Nop()
+	srv := New(":0", log)
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/chat", srv.handleChat)
+	mux.HandleFunc("GET /api/events", srv.hub.ServeHTTP)
+	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+	return httptest.NewServer(mux)
+}
+
+func TestHealthEndpoint(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/health")
+	if err != nil {
+		t.Fatalf("health request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestChatEndpointBadBody(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	resp, err := http.Post(ts.URL+"/api/chat", "application/json", bytes.NewBufferString("not-json"))
+	if err != nil {
+		t.Fatalf("chat request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
+	}
+}
+
+func TestChatEndpointStreaming(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	body, _ := json.Marshal(chatReq{Message: "hello"})
+	resp, err := http.Post(ts.URL+"/api/chat", "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		t.Fatalf("chat request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "text/event-stream") {
+		t.Errorf("expected text/event-stream, got %s", ct)
+	}
+
+	scanner := bufio.NewScanner(resp.Body)
+	var chunks []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "data: ") {
+			chunks = append(chunks, strings.TrimPrefix(line, "data: "))
+		}
+	}
+	if len(chunks) == 0 {
+		t.Error("expected at least one SSE data chunk")
+	}
+}
+
+func TestSSEHubPublish(t *testing.T) {
+	hub := newSSEHub()
+	ts := httptest.NewServer(http.HandlerFunc(hub.ServeHTTP))
+	defer ts.Close()
+
+	// Connect SSE client
+	clientDone := make(chan string, 1)
+	go func() {
+		resp, err := http.Get(ts.URL)
+		if err != nil {
+			clientDone <- ""
+			return
+		}
+		defer resp.Body.Close()
+		scanner := bufio.NewScanner(resp.Body)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.HasPrefix(line, "data: ") {
+				clientDone <- strings.TrimPrefix(line, "data: ")
+				return
+			}
+		}
+	}()
+
+	// Give client time to connect
+	time.Sleep(50 * time.Millisecond)
+
+	hub.Publish(AgentEvent{Agent: "calendar", Status: "running", Message: "syncing"})
+
+	select {
+	case got := <-clientDone:
+		var evt AgentEvent
+		if err := json.Unmarshal([]byte(got), &evt); err != nil {
+			t.Fatalf("invalid JSON from SSE: %v — raw: %s", err, got)
+		}
+		if evt.Agent != "calendar" || evt.Status != "running" {
+			t.Errorf("unexpected event: %+v", evt)
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("timeout: SSE event never received")
+	}
+}
