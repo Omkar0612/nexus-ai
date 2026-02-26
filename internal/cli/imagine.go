@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Omkar0612/nexus-ai/internal/imagegen"
 	"github.com/rs/zerolog/log"
@@ -18,8 +19,8 @@ Examples:
   nexus imagine "a futuristic Dubai skyline at sunset"
   nexus imagine --backend together "minimalist logo, purple gradient"
   nexus imagine --output ./cover.png --width 1024 --height 768 "epic mountain landscape"`,
-	Args:  cobra.MinimumNArgs(1),
-	RunE:  runImagine,
+	Args: cobra.MinimumNArgs(1),
+	RunE: runImagine,
 }
 
 func init() {
@@ -35,17 +36,7 @@ func init() {
 }
 
 func runImagine(cmd *cobra.Command, args []string) error {
-	prompt := args[0]
-	if len(args) > 1 {
-		// Allow multi-word prompts without quotes: nexus imagine a cat on a keyboard
-		prompt = ""
-		for i, a := range args {
-			if i > 0 {
-				prompt += " "
-			}
-			prompt += a
-		}
-	}
+	prompt := strings.Join(args, " ")
 
 	backend, _ := cmd.Flags().GetString("backend")
 	output, _ := cmd.Flags().GetString("output")
@@ -57,7 +48,6 @@ func runImagine(cmd *cobra.Command, args []string) error {
 	apiKey, _ := cmd.Flags().GetString("api-key")
 	model, _ := cmd.Flags().GetString("model")
 
-	// Fallback: read API key from env
 	if apiKey == "" {
 		apiKey = os.Getenv("NEXUS_TOGETHER_KEY")
 	}
@@ -84,17 +74,15 @@ func runImagine(cmd *cobra.Command, args []string) error {
 	}
 
 	agent := imagegen.New(opts...)
-	req := imagegen.Request{
+	log.Debug().Str("backend", backend).Str("prompt", prompt).Msg("Generating image...")
+	result, err := agent.Generate(cmd.Context(), imagegen.Request{
 		Prompt:         prompt,
 		NegativePrompt: negative,
 		Width:          width,
 		Height:         height,
 		Steps:          steps,
 		OutputPath:     output,
-	}
-
-	log.Info().Str("backend", backend).Str("prompt", prompt).Msg("Generating image...")
-	result, err := agent.Generate(cmd.Context(), req)
+	})
 	if err != nil {
 		return fmt.Errorf("imagine: %w", err)
 	}

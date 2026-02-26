@@ -20,16 +20,16 @@ import (
 type Backend string
 
 const (
-	BackendAudioCraft Backend = "audiocraft" // local Meta AudioCraft
-	BackendReplicate  Backend = "replicate"  // Replicate MusicGen
-	BackendStub       Backend = "stub"       // silent WAV — CI safe
+	BackendAudioCraft Backend = "audiocraft"
+	BackendReplicate  Backend = "replicate"
+	BackendStub       Backend = "stub"
 )
 
 // Request describes a music generation request.
 type Request struct {
-	Prompt     string        // e.g. "upbeat jazz piano, 120 bpm"
-	Duration   time.Duration // e.g. 10 * time.Second
-	OutputPath string        // output WAV file path
+	Prompt     string
+	Duration   time.Duration
+	OutputPath string
 }
 
 // Result holds the generation output.
@@ -42,8 +42,8 @@ type Result struct {
 // Agent is the music generation agent.
 type Agent struct {
 	backend Backend
-	acURL   string // AudioCraft bridge URL
-	apiKey  string // Replicate API key
+	acURL   string
+	apiKey  string
 	client  *http.Client
 }
 
@@ -52,26 +52,20 @@ type Option func(*Agent)
 
 // WithAudioCraft uses a local AudioCraft Python bridge server.
 func WithAudioCraft(bridgeURL string) Option {
-	return func(a *Agent) {
-		a.backend = BackendAudioCraft
-		a.acURL = bridgeURL
-	}
+	return func(a *Agent) { a.backend = BackendAudioCraft; a.acURL = bridgeURL }
 }
 
 // WithReplicate uses the Replicate API (free tier: limited runs/month).
 func WithReplicate(apiKey string) Option {
-	return func(a *Agent) {
-		a.backend = BackendReplicate
-		a.apiKey = apiKey
-	}
+	return func(a *Agent) { a.backend = BackendReplicate; a.apiKey = apiKey }
 }
 
 // New creates a music generation agent. Defaults to stub for safe CI operation.
 func New(opts ...Option) *Agent {
 	a := &Agent{
 		backend: BackendStub,
-		acURL:  "http://localhost:8765",
-		client: &http.Client{Timeout: 120 * time.Second},
+		acURL:   "http://localhost:8765",
+		client:  &http.Client{Timeout: 120 * time.Second},
 	}
 	for _, o := range opts {
 		o(a)
@@ -102,6 +96,32 @@ func (a *Agent) Generate(ctx context.Context, req Request) (*Result, error) {
 	}
 }
 
+// doJSON is a shared helper: marshal body → POST → check status → decode into out.
+func (a *Agent) doJSON(ctx context.Context, url string, body, out interface{}, authHeader string) error {
+	data, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, raw)
+	}
+	return json.NewDecoder(resp.Body).Decode(out)
+}
+
 // --- AudioCraft bridge ---
 
 type acRequest struct {
@@ -109,47 +129,39 @@ type acRequest struct {
 	Duration float64 `json:"duration"`
 }
 
+type acResponse struct {
+	Data string `json:"data"` // base64-encoded WAV
+	Path string `json:"path"` // or direct path if bridge writes to disk
+}
+
 func (a *Agent) generateAudioCraft(ctx context.Context, req Request) (*Result, error) {
 	start := time.Now()
-	body, err := json.Marshal(acRequest{
-		Prompt:   req.Prompt,
-		Duration: req.Duration.Seconds(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		a.acURL+"/generate", bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	resp, err := a.client.Do(httpReq)
-	if err != nil {
+	var acResp acResponse
+	if err := a.doJSON(ctx, a.acURL+"/generate",
+		acRequest{Prompt: req.Prompt, Duration: req.Duration.Seconds()},
+		&acResp, ""); err != nil {
 		return nil, fmt.Errorf("music[audiocraft]: %w", err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 256))
-		return nil, fmt.Errorf("music[audiocraft]: status %d: %s", resp.StatusCode, raw)
+	// Bridge may return either a path or base64 data.
+	outPath := acResp.Path
+	if outPath == "" {
+		outPath = req.OutputPath
+		if acResp.Data != "" {
+			if err := os.WriteFile(outPath, []byte(acResp.Data), 0o644); err != nil {
+				return nil, fmt.Errorf("music[audiocraft]: write: %w", err)
+			}
+		}
 	}
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("music[audiocraft]: read: %w", err)
-	}
-	if err := os.WriteFile(req.OutputPath, data, 0o644); err != nil {
-		return nil, fmt.Errorf("music[audiocraft]: write: %w", err)
-	}
-	return &Result{Path: req.OutputPath, Backend: BackendAudioCraft, Latency: time.Since(start)}, nil
+	return &Result{Path: outPath, Backend: BackendAudioCraft, Latency: time.Since(start)}, nil
 }
 
 // --- Replicate MusicGen ---
 
 type replicateMusicInput struct {
-	Prompt        string  `json:"prompt"`
-	Duration      int     `json:"duration"`
-	OutputFormat  string  `json:"output_format"`
-	Continuation  bool    `json:"continuation"`
+	Prompt       string `json:"prompt"`
+	Duration     int    `json:"duration"`
+	OutputFormat string `json:"output_format"`
+	Continuation bool   `json:"continuation"`
 }
 
 type replicatePrediction struct {
@@ -161,70 +173,41 @@ type replicatePrediction struct {
 
 func (a *Agent) generateReplicate(ctx context.Context, req Request) (*Result, error) {
 	start := time.Now()
-	body, err := json.Marshal(map[string]interface{}{
-		"version": "671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb",
-		"input": replicateMusicInput{
-			Prompt:       req.Prompt,
-			Duration:     int(req.Duration.Seconds()),
-			OutputFormat: "wav",
-			Continuation: false,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		"https://api.replicate.com/v1/predictions", bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Authorization", "Token "+a.apiKey)
-	httpReq.Header.Set("Content-Type", "application/json")
-	resp, err := a.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("music[replicate]: %w", err)
-	}
-	defer resp.Body.Close()
 	var pred replicatePrediction
-	if err := json.NewDecoder(resp.Body).Decode(&pred); err != nil {
-		return nil, fmt.Errorf("music[replicate]: decode: %w", err)
+	if err := a.doJSON(ctx, "https://api.replicate.com/v1/predictions",
+		map[string]interface{}{
+			"version": "671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb",
+			"input": replicateMusicInput{
+				Prompt:       req.Prompt,
+				Duration:     int(req.Duration.Seconds()),
+				OutputFormat: "wav",
+			},
+		}, &pred, "Token "+a.apiKey); err != nil {
+		return nil, fmt.Errorf("music[replicate]: %w", err)
 	}
 	if pred.Error != "" {
 		return nil, fmt.Errorf("music[replicate]: %s", pred.Error)
 	}
-	// Replicate returns a URL; output path is empty until user downloads
-	outputURL := ""
+	outURL := ""
 	if len(pred.Output) > 0 {
-		outputURL = pred.Output[0]
+		outURL = pred.Output[0]
 	}
-	return &Result{Path: outputURL, Backend: BackendReplicate, Latency: time.Since(start)}, nil
+	return &Result{Path: outURL, Backend: BackendReplicate, Latency: time.Since(start)}, nil
 }
-
-// --- Stub (valid silent WAV, CI-safe) ---
 
 // silentWAV is a minimal valid 44-byte WAV file with 0 data samples.
 var silentWAV = []byte{
-	// RIFF header
-	0x52, 0x49, 0x46, 0x46, // "RIFF"
-	0x24, 0x00, 0x00, 0x00, // chunk size = 36 (file size - 8)
-	0x57, 0x41, 0x56, 0x45, // "WAVE"
-	// fmt sub-chunk
-	0x66, 0x6D, 0x74, 0x20, // "fmt "
-	0x10, 0x00, 0x00, 0x00, // sub-chunk size = 16
-	0x01, 0x00, // audio format = PCM
-	0x01, 0x00, // num channels = 1
-	0x44, 0xAC, 0x00, 0x00, // sample rate = 44100
-	0x88, 0x58, 0x01, 0x00, // byte rate = 88200
-	0x02, 0x00, // block align = 2
-	0x10, 0x00, // bits per sample = 16
-	// data sub-chunk
-	0x64, 0x61, 0x74, 0x61, // "data"
-	0x00, 0x00, 0x00, 0x00, // data size = 0
+	0x52, 0x49, 0x46, 0x46, 0x24, 0x00, 0x00, 0x00,
+	0x57, 0x41, 0x56, 0x45, 0x66, 0x6D, 0x74, 0x20,
+	0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
+	0x44, 0xAC, 0x00, 0x00, 0x88, 0x58, 0x01, 0x00,
+	0x02, 0x00, 0x10, 0x00, 0x64, 0x61, 0x74, 0x61,
+	0x00, 0x00, 0x00, 0x00,
 }
 
 func (a *Agent) generateStub(req Request) (*Result, error) {
 	if err := os.WriteFile(req.OutputPath, silentWAV, 0o644); err != nil {
 		return nil, fmt.Errorf("music[stub]: write: %w", err)
 	}
-	return &Result{Path: req.OutputPath, Backend: BackendStub, Latency: 0}, nil
+	return &Result{Path: req.OutputPath, Backend: BackendStub}, nil
 }

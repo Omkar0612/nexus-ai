@@ -22,9 +22,9 @@ import (
 type Backend string
 
 const (
-	BackendSD        Backend = "stablediffusion" // local Automatic1111 or ComfyUI
-	BackendTogether  Backend = "together"         // free $25 credits — FLUX.1-schnell
-	BackendReplicate Backend = "replicate"         // free limited runs — SDXL
+	BackendSD        Backend = "stablediffusion"
+	BackendTogether  Backend = "together"
+	BackendReplicate Backend = "replicate"
 )
 
 // Request describes an image generation request.
@@ -34,7 +34,7 @@ type Request struct {
 	Width          int    // default 512
 	Height         int    // default 512
 	Steps          int    // default 20
-	OutputPath     string // save PNG to file; empty = base64 only
+	OutputPath     string // save PNG to file; empty = temp file
 }
 
 // Result holds the generation output.
@@ -47,9 +47,9 @@ type Result struct {
 
 // Agent is the image generation agent.
 type Agent struct {
-	backend  Backend
-	sdURL   string // Automatic1111 base URL
-	apiKey  string // Together or Replicate
+	backend Backend
+	sdURL   string
+	apiKey  string
 	model   string
 	client  *http.Client
 }
@@ -59,27 +59,17 @@ type Option func(*Agent)
 
 // WithStableDiffusion uses a local Automatic1111/ComfyUI server.
 func WithStableDiffusion(baseURL string) Option {
-	return func(a *Agent) {
-		a.backend = BackendSD
-		a.sdURL = baseURL
-	}
+	return func(a *Agent) { a.backend = BackendSD; a.sdURL = baseURL }
 }
 
 // WithTogether uses the Together AI free-tier image API (FLUX.1-schnell).
 func WithTogether(apiKey, model string) Option {
-	return func(a *Agent) {
-		a.backend = BackendTogether
-		a.apiKey = apiKey
-		a.model = model
-	}
+	return func(a *Agent) { a.backend = BackendTogether; a.apiKey = apiKey; a.model = model }
 }
 
 // WithReplicate uses the Replicate API (SDXL, free limited runs).
 func WithReplicate(apiKey string) Option {
-	return func(a *Agent) {
-		a.backend = BackendReplicate
-		a.apiKey = apiKey
-	}
+	return func(a *Agent) { a.backend = BackendReplicate; a.apiKey = apiKey }
 }
 
 // New creates an image generation agent.
@@ -87,9 +77,9 @@ func WithReplicate(apiKey string) Option {
 func New(opts ...Option) *Agent {
 	a := &Agent{
 		backend: BackendSD,
-		sdURL:  "http://127.0.0.1:7860",
-		model:  "black-forest-labs/FLUX.1-schnell-Free",
-		client: &http.Client{Timeout: 120 * time.Second},
+		sdURL:   "http://127.0.0.1:7860",
+		model:   "black-forest-labs/FLUX.1-schnell-Free",
+		client:  &http.Client{Timeout: 120 * time.Second},
 	}
 	for _, o := range opts {
 		o(a)
@@ -99,15 +89,9 @@ func New(opts ...Option) *Agent {
 
 // Generate creates an image from the request.
 func (a *Agent) Generate(ctx context.Context, req Request) (*Result, error) {
-	if req.Width == 0 {
-		req.Width = 512
-	}
-	if req.Height == 0 {
-		req.Height = 512
-	}
-	if req.Steps == 0 {
-		req.Steps = 20
-	}
+	if req.Width == 0 { req.Width = 512 }
+	if req.Height == 0 { req.Height = 512 }
+	if req.Steps == 0 { req.Steps = 20 }
 	if req.OutputPath == "" {
 		req.OutputPath = filepath.Join(os.TempDir(),
 			fmt.Sprintf("nexus-img-%d.png", time.Now().UnixNano()))
@@ -128,7 +112,6 @@ func (a *Agent) Generate(ctx context.Context, req Request) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Persist to disk if base64 was returned
 	if result.Base64 != "" && result.Path == "" {
 		if err := saveBase64(result.Base64, req.OutputPath); err != nil {
 			return nil, fmt.Errorf("imagegen: save: %w", err)
@@ -136,6 +119,34 @@ func (a *Agent) Generate(ctx context.Context, req Request) (*Result, error) {
 		result.Path = req.OutputPath
 	}
 	return result, nil
+}
+
+// --- shared HTTP helper ---
+
+// doJSON marshals body, POSTs to url, checks status, decodes into out.
+func (a *Agent) doJSON(ctx context.Context, url string, body, out interface{}, authHeader string) error {
+	data, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, raw)
+	}
+	return json.NewDecoder(resp.Body).Decode(out)
 }
 
 // --- Stable Diffusion (Automatic1111) ---
@@ -155,34 +166,12 @@ type SDResponse struct {
 
 func (a *Agent) generateSD(ctx context.Context, req Request) (*Result, error) {
 	start := time.Now()
-	body, err := json.Marshal(sdRequest{
-		Prompt:         req.Prompt,
-		NegativePrompt: req.NegativePrompt,
-		Width:          req.Width,
-		Height:         req.Height,
-		Steps:          req.Steps,
-	})
-	if err != nil {
-		return nil, err
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		a.sdURL+"/sdapi/v1/txt2img", bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	resp, err := a.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("imagegen[sd]: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return nil, fmt.Errorf("imagegen[sd]: status %d: %s", resp.StatusCode, raw)
-	}
 	var sdResp SDResponse
-	if err := json.NewDecoder(resp.Body).Decode(&sdResp); err != nil {
-		return nil, fmt.Errorf("imagegen[sd]: decode: %w", err)
+	if err := a.doJSON(ctx, a.sdURL+"/sdapi/v1/txt2img", sdRequest{
+		Prompt: req.Prompt, NegativePrompt: req.NegativePrompt,
+		Width: req.Width, Height: req.Height, Steps: req.Steps,
+	}, &sdResp, ""); err != nil {
+		return nil, fmt.Errorf("imagegen[sd]: %w", err)
 	}
 	if len(sdResp.Images) == 0 {
 		return nil, fmt.Errorf("imagegen[sd]: no images returned")
@@ -209,36 +198,13 @@ type togetherImgResponse struct {
 
 func (a *Agent) generateTogether(ctx context.Context, req Request) (*Result, error) {
 	start := time.Now()
-	body, err := json.Marshal(togetherImgRequest{
-		Model:  a.model,
-		Prompt: req.Prompt,
-		Width:  req.Width,
-		Height: req.Height,
-		Steps:  req.Steps,
-		N:      1,
-	})
-	if err != nil {
-		return nil, err
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		"https://api.together.xyz/v1/images/generations", bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Authorization", "Bearer "+a.apiKey)
-	httpReq.Header.Set("Content-Type", "application/json")
-	resp, err := a.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("imagegen[together]: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return nil, fmt.Errorf("imagegen[together]: status %d: %s", resp.StatusCode, raw)
-	}
 	var tResp togetherImgResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tResp); err != nil {
-		return nil, fmt.Errorf("imagegen[together]: decode: %w", err)
+	if err := a.doJSON(ctx, "https://api.together.xyz/v1/images/generations",
+		togetherImgRequest{
+			Model: a.model, Prompt: req.Prompt,
+			Width: req.Width, Height: req.Height, Steps: req.Steps, N: 1,
+		}, &tResp, "Bearer "+a.apiKey); err != nil {
+		return nil, fmt.Errorf("imagegen[together]: %w", err)
 	}
 	if len(tResp.Data) == 0 {
 		return nil, fmt.Errorf("imagegen[together]: no images returned")
@@ -265,39 +231,20 @@ type replicatePrediction struct {
 
 func (a *Agent) generateReplicate(ctx context.Context, req Request) (*Result, error) {
 	start := time.Now()
-	body, err := json.Marshal(map[string]interface{}{
-		"version": "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-		"input": replicateInput{
-			Prompt:         req.Prompt,
-			NegativePrompt: req.NegativePrompt,
-			Width:          req.Width,
-			Height:         req.Height,
-			NumSteps:       req.Steps,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		"https://api.replicate.com/v1/predictions", bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Authorization", "Token "+a.apiKey)
-	httpReq.Header.Set("Content-Type", "application/json")
-	resp, err := a.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("imagegen[replicate]: %w", err)
-	}
-	defer resp.Body.Close()
 	var pred replicatePrediction
-	if err := json.NewDecoder(resp.Body).Decode(&pred); err != nil {
-		return nil, fmt.Errorf("imagegen[replicate]: decode: %w", err)
+	if err := a.doJSON(ctx, "https://api.replicate.com/v1/predictions",
+		map[string]interface{}{
+			"version": "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+			"input": replicateInput{
+				Prompt: req.Prompt, NegativePrompt: req.NegativePrompt,
+				Width: req.Width, Height: req.Height, NumSteps: req.Steps,
+			},
+		}, &pred, "Token "+a.apiKey); err != nil {
+		return nil, fmt.Errorf("imagegen[replicate]: %w", err)
 	}
 	if pred.Error != "" {
 		return nil, fmt.Errorf("imagegen[replicate]: %s", pred.Error)
 	}
-	// Replicate returns a URL, not base64; caller can download separately
 	path := ""
 	if len(pred.Output) > 0 {
 		path = pred.Output[0]

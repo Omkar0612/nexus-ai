@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -48,8 +49,7 @@ func runWriteDraft(cmd *cobra.Command, _ []string) error {
 	styleStr, _ := cmd.Flags().GetString("style")
 	words, _ := cmd.Flags().GetInt("words")
 	out, _ := cmd.Flags().GetString("out")
-
-	a, err := newWritingAgent(cmd)
+	a, err := newWritingAgent()
 	if err != nil {
 		return err
 	}
@@ -80,12 +80,11 @@ func runWriteRewrite(cmd *cobra.Command, _ []string) error {
 	styleStr, _ := cmd.Flags().GetString("style")
 	file, _ := cmd.Flags().GetString("file")
 	out, _ := cmd.Flags().GetString("out")
-
 	text, err := readInput(file)
 	if err != nil {
 		return err
 	}
-	a, err := newWritingAgent(cmd)
+	a, err := newWritingAgent()
 	if err != nil {
 		return err
 	}
@@ -101,9 +100,8 @@ func runWriteRewrite(cmd *cobra.Command, _ []string) error {
 var writeSummariseCmd = &cobra.Command{
 	Use:   "summarise",
 	Short: "Summarise text to a target word count",
-	Example: `  nexus write summarise --file meeting-notes.txt --words 100
-  nexus write summarise --words 50 --file article.md`,
-	RunE: runWriteSummarise,
+	Example: `  nexus write summarise --file meeting-notes.txt --words 100`,
+	RunE:    runWriteSummarise,
 }
 
 func init() {
@@ -116,12 +114,11 @@ func runWriteSummarise(cmd *cobra.Command, _ []string) error {
 	file, _ := cmd.Flags().GetString("file")
 	words, _ := cmd.Flags().GetInt("words")
 	out, _ := cmd.Flags().GetString("out")
-
 	text, err := readInput(file)
 	if err != nil {
 		return err
 	}
-	a, err := newWritingAgent(cmd)
+	a, err := newWritingAgent()
 	if err != nil {
 		return err
 	}
@@ -150,12 +147,11 @@ func init() {
 func runWriteProofread(cmd *cobra.Command, _ []string) error {
 	file, _ := cmd.Flags().GetString("file")
 	out, _ := cmd.Flags().GetString("out")
-
 	text, err := readInput(file)
 	if err != nil {
 		return err
 	}
-	a, err := newWritingAgent(cmd)
+	a, err := newWritingAgent()
 	if err != nil {
 		return err
 	}
@@ -191,12 +187,11 @@ func runWriteExpand(cmd *cobra.Command, _ []string) error {
 	file, _ := cmd.Flags().GetString("file")
 	styleStr, _ := cmd.Flags().GetString("style")
 	out, _ := cmd.Flags().GetString("out")
-
 	outline, err := readInput(file)
 	if err != nil {
 		return err
 	}
-	a, err := newWritingAgent(cmd)
+	a, err := newWritingAgent()
 	if err != nil {
 		return err
 	}
@@ -228,12 +223,11 @@ func runWriteTranslate(cmd *cobra.Command, _ []string) error {
 	file, _ := cmd.Flags().GetString("file")
 	lang, _ := cmd.Flags().GetString("lang")
 	out, _ := cmd.Flags().GetString("out")
-
 	text, err := readInput(file)
 	if err != nil {
 		return err
 	}
-	a, err := newWritingAgent(cmd)
+	a, err := newWritingAgent()
 	if err != nil {
 		return err
 	}
@@ -244,47 +238,39 @@ func runWriteTranslate(cmd *cobra.Command, _ []string) error {
 	return writeOutput(result, out)
 }
 
-// -- helpers --
+// -- shared helpers --
 
-func newWritingAgent(cmd *cobra.Command) (*writing.Agent, error) {
-	llmCfg := types.LLMConfig{
-		Provider:   "ollama",
-		Model:      "llama3.2",
-		BaseURL:    "http://localhost:11434/v1",
+// newWritingAgent builds a writing agent from environment variables.
+// Supported env vars: NEXUS_LLM_PROVIDER, NEXUS_LLM_MODEL, NEXUS_LLM_BASE_URL, NEXUS_LLM_API_KEY.
+func newWritingAgent() (*writing.Agent, error) {
+	r := router.New(types.LLMConfig{
+		Provider:   getEnvOrDefault("NEXUS_LLM_PROVIDER", "ollama"),
+		Model:      getEnvOrDefault("NEXUS_LLM_MODEL", "llama3.2"),
+		BaseURL:    getEnvOrDefault("NEXUS_LLM_BASE_URL", "http://localhost:11434/v1"),
+		APIKey:     os.Getenv("NEXUS_LLM_API_KEY"),
 		TimeoutSec: 120,
-	}
-	if v := os.Getenv("NEXUS_LLM_PROVIDER"); v != "" {
-		llmCfg.Provider = v
-	}
-	if v := os.Getenv("NEXUS_LLM_MODEL"); v != "" {
-		llmCfg.Model = v
-	}
-	if v := os.Getenv("NEXUS_LLM_BASE_URL"); v != "" {
-		llmCfg.BaseURL = v
-	}
-	if v := os.Getenv("NEXUS_LLM_API_KEY"); v != "" {
-		llmCfg.APIKey = v
-	}
-	r := router.New(llmCfg)
+	})
 	return writing.New(r), nil
 }
 
+// readInput reads text from a file or stdin.
+// Uses os.Stdin directly — works on all platforms including Windows.
 func readInput(file string) (string, error) {
-	if file == "" {
-		// Read from stdin
-		data, err := os.ReadFile("/dev/stdin")
+	if file != "" {
+		data, err := os.ReadFile(file)
 		if err != nil {
-			return "", fmt.Errorf("read stdin: %w", err)
+			return "", fmt.Errorf("read file %q: %w", file, err)
 		}
 		return strings.TrimSpace(string(data)), nil
 	}
-	data, err := os.ReadFile(file)
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		return "", fmt.Errorf("read file %q: %w", file, err)
+		return "", fmt.Errorf("read stdin: %w", err)
 	}
 	return strings.TrimSpace(string(data)), nil
 }
 
+// writeOutput prints text to stdout or saves it to a file.
 func writeOutput(text, path string) error {
 	if path == "" {
 		fmt.Println(text)

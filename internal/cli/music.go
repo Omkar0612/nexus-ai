@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Omkar0612/nexus-ai/internal/music"
@@ -18,8 +19,8 @@ Examples:
   nexus music "calm lo-fi piano for focus work" --duration 30s
   nexus music --backend replicate "cinematic orchestral" --duration 15s --out score.wav
   nexus music "upbeat jazz, 120 bpm" --out track.wav`,
-	Args:  cobra.MinimumNArgs(1),
-	RunE:  runMusic,
+	Args: cobra.MinimumNArgs(1),
+	RunE: runMusic,
 }
 
 func init() {
@@ -31,13 +32,7 @@ func init() {
 }
 
 func runMusic(cmd *cobra.Command, args []string) error {
-	prompt := ""
-	for i, a := range args {
-		if i > 0 {
-			prompt += " "
-		}
-		prompt += a
-	}
+	prompt := strings.Join(args, " ")
 
 	backend, _ := cmd.Flags().GetString("backend")
 	duration, _ := cmd.Flags().GetDuration("duration")
@@ -48,7 +43,7 @@ func runMusic(cmd *cobra.Command, args []string) error {
 	var opts []music.Option
 	switch backend {
 	case "stub":
-		// default, no option needed
+		// default — no option needed
 	case "audiocraft":
 		opts = append(opts, music.WithAudioCraft(acURL))
 	case "replicate":
@@ -60,15 +55,12 @@ func runMusic(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unknown backend %q — choose: stub, audiocraft, replicate", backend)
 	}
 
-	agent := music.New(opts...)
-	req := music.Request{
+	log.Debug().Str("backend", backend).Str("prompt", prompt).Dur("duration", duration).Msg("Generating music...")
+	result, err := music.New(opts...).Generate(cmd.Context(), music.Request{
 		Prompt:     prompt,
 		Duration:   duration,
 		OutputPath: out,
-	}
-
-	log.Info().Str("backend", backend).Str("prompt", prompt).Dur("duration", duration).Msg("Generating music...")
-	result, err := agent.Generate(cmd.Context(), req)
+	})
 	if err != nil {
 		return fmt.Errorf("music: %w", err)
 	}

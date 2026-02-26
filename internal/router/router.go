@@ -1,3 +1,5 @@
+// Package router provides an LLM provider router with automatic fallback
+// and a simple circuit-breaker (3 consecutive failures → mark unhealthy).
 package router
 
 import (
@@ -8,44 +10,80 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Omkar0612/nexus-ai/internal/types"
 	"github.com/rs/zerolog/log"
 )
 
-// Provider is a registered LLM backend
-type Provider struct {
-	Name    string
-	BaseURL string
-	APIKey  string
-	Model   string
-	Healthy bool
+// circuitThreshold is the number of consecutive errors before a provider is
+// marked unhealthy and skipped by the router.
+const circuitThreshold = 3
+
+// sharedTransport is a tuned http.Transport reused by all router instances.
+// Connection pooling eliminates per-request TCP + TLS handshake overhead.
+var sharedTransport = &http.Transport{
+	MaxIdleConns:        100,
+	MaxIdleConnsPerHost: 20,
+	IdleConnTimeout:     90 * time.Second,
+	TLSHandshakeTimeout: 10 * time.Second,
+	DisableCompression:  false,
 }
 
-// Router selects the best available LLM provider and falls back automatically
+// Provider is a registered LLM backend.
+type Provider struct {
+	Name     string
+	BaseURL  string
+	APIKey   string
+	Model    string
+	Healthy  bool
+	failures atomic.Int32 // consecutive failure counter — circuit breaker
+}
+
+// recordFailure increments the failure counter and marks unhealthy at threshold.
+func (p *Provider) recordFailure() {
+	if p.failures.Add(1) >= circuitThreshold {
+		p.Healthy = false
+	}
+}
+
+// recordSuccess resets the circuit breaker.
+func (p *Provider) recordSuccess() {
+	p.failures.Store(0)
+	p.Healthy = true
+}
+
+// Router selects the best available LLM provider with automatic fallback.
 type Router struct {
 	primary   *Provider
 	fallbacks []*Provider
 	client    *http.Client
 }
 
-// New creates a new LLM router from config
+// New creates a new LLM router from config.
 func New(cfg types.LLMConfig) *Router {
-	primary := providerFromConfig(cfg)
+	timeout := time.Duration(cfg.TimeoutSec) * time.Second
+	if timeout == 0 {
+		timeout = 120 * time.Second
+	}
 	return &Router{
-		primary:   primary,
+		primary:   providerFromConfig(cfg),
 		fallbacks: []*Provider{},
-		client:    &http.Client{Timeout: time.Duration(cfg.TimeoutSec) * time.Second},
+		client: &http.Client{
+			Timeout:   timeout,
+			Transport: sharedTransport,
+		},
 	}
 }
 
-// AddFallback registers a fallback provider
+// AddFallback registers a fallback provider.
 func (r *Router) AddFallback(p *Provider) {
 	r.fallbacks = append(r.fallbacks, p)
 }
 
-// Complete sends a completion request, falling back on error
+// Complete sends a completion request, falling back on error.
 func (r *Router) Complete(ctx context.Context, systemPrompt, userMsg string) (*types.AgentResult, error) {
 	start := time.Now()
 	providers := append([]*Provider{r.primary}, r.fallbacks...)
@@ -57,10 +95,11 @@ func (r *Router) Complete(ctx context.Context, systemPrompt, userMsg string) (*t
 		content, tokIn, tokOut, err := r.callProvider(ctx, p, systemPrompt, userMsg)
 		if err != nil {
 			log.Warn().Str("provider", p.Name).Err(err).Msg("provider failed, trying fallback")
-			p.Healthy = false
+			p.recordFailure()
 			lastErr = err
 			continue
 		}
+		p.recordSuccess()
 		return &types.AgentResult{
 			Content:   content,
 			Agent:     "router",
@@ -73,18 +112,31 @@ func (r *Router) Complete(ctx context.Context, systemPrompt, userMsg string) (*t
 	return nil, fmt.Errorf("all providers failed: %w", lastErr)
 }
 
-// callProvider sends a chat completion request to a single provider
+// callProvider sends a chat completion request to a single provider.
+// Uses a pooled buffer to avoid per-call allocations on the JSON body.
 func (r *Router) callProvider(ctx context.Context, p *Provider, system, user string) (string, int, int, error) {
-	body := map[string]interface{}{
-		"model": p.Model,
-		"messages": []map[string]string{
-			{"role": "system", "content": system},
-			{"role": "user", "content": user},
-		},
-		"max_tokens": 2048,
+	type message struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
 	}
-	data, _ := json.Marshal(body)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.BaseURL+"/chat/completions", bytes.NewReader(data))
+	body := struct {
+		Model     string    `json:"model"`
+		Messages  []message `json:"messages"`
+		MaxTokens int       `json:"max_tokens"`
+	}{
+		Model: p.Model,
+		Messages: []message{
+			{Role: "system", Content: system},
+			{Role: "user", Content: user},
+		},
+		MaxTokens: 2048,
+	}
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(body); err != nil {
+		return "", 0, 0, fmt.Errorf("router: encode: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		p.BaseURL+"/chat/completions", &buf)
 	if err != nil {
 		return "", 0, 0, err
 	}
@@ -98,8 +150,8 @@ func (r *Router) callProvider(ctx context.Context, p *Provider, system, user str
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return "", 0, 0, fmt.Errorf("provider %s HTTP %d: %s", p.Name, resp.StatusCode, string(b))
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		return "", 0, 0, fmt.Errorf("provider %s HTTP %d: %s", p.Name, resp.StatusCode, b)
 	}
 	var res struct {
 		Choices []struct {
@@ -113,7 +165,7 @@ func (r *Router) callProvider(ctx context.Context, p *Provider, system, user str
 		} `json:"usage"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return "", 0, 0, err
+		return "", 0, 0, fmt.Errorf("router: decode: %w", err)
 	}
 	if len(res.Choices) == 0 {
 		return "", 0, 0, fmt.Errorf("empty response from %s", p.Name)
@@ -122,29 +174,37 @@ func (r *Router) callProvider(ctx context.Context, p *Provider, system, user str
 		res.Usage.PromptTokens, res.Usage.CompletionTokens, nil
 }
 
-// HealthCheck pings all providers and marks them healthy/unhealthy
+// HealthCheck pings all providers in parallel and marks them healthy/unhealthy.
 func (r *Router) HealthCheck(ctx context.Context) {
 	providers := append([]*Provider{r.primary}, r.fallbacks...)
+	var wg sync.WaitGroup
 	for _, p := range providers {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.BaseURL+"/models", nil)
-		if err != nil {
-			p.Healthy = false
-			continue
-		}
-		if p.APIKey != "" {
-			req.Header.Set("Authorization", "Bearer "+p.APIKey)
-		}
-		resp, err := r.client.Do(req)
-		if err != nil || resp.StatusCode >= 500 {
-			p.Healthy = false
-			log.Warn().Str("provider", p.Name).Msg("provider unhealthy")
-		} else {
-			p.Healthy = true
-		}
-		if resp != nil {
-			resp.Body.Close()
-		}
+		p := p
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.BaseURL+"/models", nil)
+			if err != nil {
+				p.Healthy = false
+				return
+			}
+			if p.APIKey != "" {
+				req.Header.Set("Authorization", "Bearer "+p.APIKey)
+			}
+			resp, err := r.client.Do(req)
+			if err != nil || resp.StatusCode >= 500 {
+				p.Healthy = false
+				log.Warn().Str("provider", p.Name).Msg("provider unhealthy")
+			} else {
+				p.recordSuccess()
+				log.Debug().Str("provider", p.Name).Msg("provider healthy")
+			}
+			if resp != nil {
+				resp.Body.Close()
+			}
+		}()
 	}
+	wg.Wait()
 }
 
 func providerFromConfig(cfg types.LLMConfig) *Provider {
@@ -157,6 +217,8 @@ func providerFromConfig(cfg types.LLMConfig) *Provider {
 			baseURL = "https://api.anthropic.com/v1"
 		case "openai":
 			baseURL = "https://api.openai.com/v1"
+		case "together":
+			baseURL = "https://api.together.xyz/v1"
 		case "ollama":
 			baseURL = "http://localhost:11434/v1"
 		default:
