@@ -1,22 +1,18 @@
 # 🧠 NEXUS — The AI Agent That Actually Works
 
+[![CI](https://github.com/Omkar0612/nexus-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Omkar0612/nexus-ai/actions/workflows/ci.yml)
 [![Stars](https://img.shields.io/github/stars/Omkar0612/nexus-ai?style=social)](https://github.com/Omkar0612/nexus-ai/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Free](https://img.shields.io/badge/cost-100%25%20free-brightgreen)](https://github.com/Omkar0612/nexus-ai)
 [![Go](https://img.shields.io/badge/Go-1.22-blue)](https://go.dev)
 
-> I analyzed 500+ Reddit complaints about AI agents and built fixes for every single one.
+> I analysed 500+ Reddit complaints about AI agents and built fixes for every single one.
 
-**NEXUS is the first open-source AI agent with:**
-- 🔍 **Drift Detection** — spots stalled work before it fails
-- 🏥 **Self-Healing** — auto-diagnoses and fixes broken tasks
-- 🎭 **Emotional Intelligence** — adapts tone based on how stressed you sound
-- 🎯 **Goal Tracking** — warns when you're off-track from your goals
-- 👋 **Session Briefing** — briefs you when you return after being away
-- 📈 **Adaptive Learning** — gets smarter the more you use it
-- 🔐 **Privacy Vault** — AES-256 encrypted secrets, auto-redacted from LLM prompts
-- 🎭 **Persona Engine** — switch between work/creative/client/focus modes
-- 📴 **Offline Mode** — works fully without internet, queues tasks automatically
+**NEXUS is the most capable open-source AI agent ever built:**
+
+| v1.0–1.2 | v1.3 | v1.4 |
+|---|---|---|
+| Drift Detection, Self-Healing, Emotional Intelligence, Goal Tracking, Session Briefing, Adaptive Learning, Privacy Vault, Persona Engine, Offline Mode, Cluster/Load Balancer | Multi-Agent Bus, Daily Digest, HITL Gate, Voice Interface, Browser Agent | Analytics Dashboard, Phone Agent, Email Agent, Notes Agent, GitHub Agent, Telegram Companion |
 
 ---
 
@@ -38,6 +34,19 @@ nexus start
 nexus chat
 ```
 
+### 📱 Use NEXUS on your phone via Telegram
+
+```bash
+# Add to nexus.toml:
+# [telegram]
+# token = "your-bot-token"
+# allowed_user_ids = [your-telegram-id]
+# admin_chat_id = your-telegram-id
+
+nexus telegram start
+# Now control NEXUS from anywhere — no app install needed
+```
+
 ---
 
 ## 🆓 100% Free Forever
@@ -52,28 +61,27 @@ nexus chat
 
 ---
 
-## 🧠 Features That Never Existed Before
+## 🧠 Core Features (v1.0–1.2)
 
-### 1. Drift Detector
+### Drift Detector
 ```bash
 nexus drift
-# Output:
 # 🔴 [HIGH] Task appears stalled: 'building the webhook handler' (last touched 2 days ago)
 #    💡 Resume or close: 'building the webhook handler'
 # 🟡 [MEDIUM] Follow-up may have been missed (mentioned 3 days ago)
 #    💡 Did you follow up on: 'ping the client about the invoice'?
 ```
 
-### 2. Self-Healing
+### Self-Healing
 ```bash
 # When a task fails, NEXUS auto-diagnoses:
-# ⚠️ Task 'daily-briefing' failed (attempt 1/3)
+# ⚠️  Task 'daily-briefing' failed (attempt 1/3)
 # ROOT CAUSE: Groq API rate limit exceeded at 06:00 UTC
 # FIX: Switching to Gemini Flash fallback. Retrying in 30s...
 # ✅ Task recovered successfully.
 ```
 
-### 3. Emotional Intelligence
+### Emotional Intelligence
 ```bash
 # You type: "this is STILL not working ugh"
 # NEXUS detects: frustrated + stressed
@@ -81,7 +89,7 @@ nexus drift
 # "I can see this has been frustrating. Here's the fix: [direct answer]"
 ```
 
-### 4. Persona Engine
+### Persona Engine
 ```bash
 nexus persona use work      # formal, full tools, code-heavy
 nexus persona use creative  # brainstorming mode
@@ -91,7 +99,7 @@ nexus persona use research  # deep, cited, thorough
 nexus persona create my-mode --prompt "Always respond in bullet points"
 ```
 
-### 5. Privacy Vault
+### Privacy Vault
 ```bash
 nexus vault store GROQ_API_KEY gsk_xxxxx --zone business
 nexus vault store PERSONAL_NOTE "My strategy for Q2" --zone personal
@@ -99,32 +107,198 @@ nexus vault list
 # Secrets are AES-256 encrypted and NEVER sent to any LLM
 ```
 
-### 6. Offline Mode
+### Offline Mode
 ```bash
 # Lose internet? NEXUS auto-switches to local Ollama
-# All tasks queue up and run when you're back online
+# All tasks queue and execute when you're back online
 nexus status
 # 📴 Offline mode active (Ollama). 3 tasks queued for sync.
 ```
 
 ---
 
-## 🤖 AI Coworker Mode
+## 🤖 Multi-Agent System (v1.3)
 
-NEXUS chains multiple agents automatically:
+### Multi-Agent Bus
+NEXUS spawns and coordinates typed sub-agents over a central message bus:
 
 ```bash
 nexus chat
 > research the top 5 AI startups from YC 2026, analyze their pricing,
   write a competitive analysis and save it as report.md
 
-# NEXUS automatically:
-# [1/4] 🔍 Research Agent → fetching YC 2026 batch data
-# [2/4] 📊 Data Agent    → analyzing pricing models
-# [3/4] ✍️  Writer Agent  → drafting competitive analysis
-# [4/4] 💾 File Agent    → saving report.md
+# NEXUS automatically routes across agents:
+# [1/4] 🔍 Researcher Agent → fetching YC 2026 batch data
+# [2/4] 📊 Analyst Agent    → analyzing pricing models
+# [3/4] ✍️  Writer Agent     → drafting competitive analysis
+# [4/4] 💾 File Agent       → saving report.md
 # ✅ Done in 47s
 ```
+
+Available agent roles: `researcher` · `coder` · `writer` · `analyst` · `reviewer`
+
+### Human-in-the-Loop (HITL) Gate
+Every action is risk-classified before execution:
+
+```
+🟢 low risk    → auto-executes silently
+🟡 medium risk → executes with audit log entry
+🔴 high risk   → pauses, sends Telegram approval request
+🛑 emergency  → nexus lock  (blocks all medium/high actions instantly)
+```
+
+```bash
+nexus lock    # engage emergency lock
+nexus unlock  # release
+```
+
+### Voice Interface
+```bash
+nexus voice start
+# 🎤 Listening... (Whisper transcription, fully offline)
+# Speak your command — NEXUS replies via TTS
+# Supports ElevenLabs, piper (local), or silent mode
+```
+
+### Browser Agent
+```bash
+nexus browse "go to github.com/trending and extract the top 10 repos"
+# 🌐 Navigating → github.com/trending
+# 📸 Extracting content...
+# ✅ Found 10 repos. Injecting into context.
+# Safety: URL allowlist, depth limit, loop detection built-in
+```
+
+### Daily Digest
+```bash
+# Delivered every morning automatically:
+nexus digest
+# 🌅 Good morning, Omkar.
+# 📈 Goals on track: 3/4
+# ⚠️  Drift signals: 1 stalled task
+# 💰 LLM spend yesterday: $0.00 (free tier)
+# 📚 KB highlights: 2 new notes indexed
+```
+
+---
+
+## 📊 Analytics & Integrations (v1.4)
+
+### Analytics Dashboard
+```bash
+nexus dashboard
+# Web UI at http://localhost:7700/dashboard
+# Shows: cost over time, agent stats, goal progress,
+#        audit trail, drift history, KB usage
+```
+
+### Phone Agent (Twilio)
+```bash
+nexus phone call +971501234567 --message "Your meeting is in 10 minutes"
+nexus phone sms  +971501234567 --message "Task complete: report.md saved"
+# Inbound calls auto-routed to NEXUS voice pipeline
+```
+
+### Email Agent (IMAP/SMTP)
+```bash
+nexus email read     # fetch + classify inbox
+nexus email reply 42 # draft + send reply via LLM
+nexus email rules    # view auto-responder rules
+# Secrets auto-redacted before any LLM processing
+```
+
+### Notes Agent
+```bash
+nexus notes capture  # auto-capture meeting notes from voice/text
+nexus notes search "Q2 strategy"
+nexus notes export meeting-2026-02-26 --format markdown
+# Action items extracted automatically
+```
+
+### GitHub Agent
+```bash
+nexus github issue create --repo myorg/myrepo --title "Bug: login fails"
+nexus github pr review 42
+nexus github branch create feature/new-thing
+# Destructive operations (delete, force-push) require HITL approval
+```
+
+### Telegram Mobile Companion
+```
+📱 Full NEXUS from your phone:
+  /chat    — chat with NEXUS
+  /drift   — check stalled tasks
+  /digest  — morning briefing on demand
+  /vault   — retrieve secrets
+  /approve — approve/reject high-risk actions
+  + inline keyboard for quick actions
+  + voice message support
+```
+
+---
+
+## 🏗️ Architecture
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│                    NEXUS CLUSTER                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │  Node 1  │  │  Node 2  │  │  Node 3  │            │
+│  │  :7701   │  │  :7702   │  │  :7703   │            │
+│  └────┬────┘  └────┬────┘  └────┬────┘            │
+│       └─────────────┤─────────────┘                   │
+│               ┌─────┤─────┐                          │
+│               │ Load Balancer │                          │
+│               │    :7700      │                          │
+│               └──────────────┘                          │
+│                                                          │
+│  Gateways:  CLI │ Telegram │ Discord │ Web API          │
+│  Agents:    Researcher │ Coder │ Writer │ Analyst │ Reviewer │
+│  Memory:    SQLite (episodic + semantic + KB)             │
+│  Vault:     AES-256-GCM encrypted SQLite                 │
+│  Workers:   Python (research / browser / vision)         │
+│  Integrations: Twilio │ IMAP/SMTP │ GitHub │ n8n         │
+└───────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🐳 One-Command Cluster
+
+```bash
+docker compose up -d
+# Starts: 3 NEXUS nodes + Python workers + Ollama + n8n
+# Load balancer auto-removes dead nodes
+# Health checks every 10s
+```
+
+---
+
+## 📊 NEXUS vs Other Agents
+
+| Feature | NEXUS | OpenClaw | n8n AI | AutoGPT |
+|---|:---:|:---:|:---:|:---:|
+| Drift Detection | ✅ | ❌ | ❌ | ❌ |
+| Self-Healing | ✅ | ❌ | ❌ | ❌ |
+| Emotional Intelligence | ✅ | ❌ | ❌ | ❌ |
+| Goal Tracking | ✅ | ❌ | ❌ | ⚠️ |
+| Privacy Vault | ✅ | ❌ | ❌ | ❌ |
+| Offline Mode | ✅ | ❌ | ❌ | ❌ |
+| Persona Engine | ✅ | ❌ | ❌ | ❌ |
+| Session Briefing | ✅ | ❌ | ❌ | ❌ |
+| Multi-Agent Bus | ✅ | ❌ | ⚠️ | ⚠️ |
+| HITL Gate | ✅ | ❌ | ⚠️ | ⚠️ |
+| Voice Interface | ✅ | ❌ | ❌ | ❌ |
+| Browser Agent | ✅ | ❌ | ❌ | ✅ |
+| Daily Digest | ✅ | ❌ | ❌ | ❌ |
+| Analytics Dashboard | ✅ | ❌ | ⚠️ | ❌ |
+| Phone / SMS Agent | ✅ | ❌ | ⚠️ | ❌ |
+| Email Agent | ✅ | ❌ | ⚠️ | ❌ |
+| Notes Agent | ✅ | ❌ | ❌ | ❌ |
+| GitHub Agent | ✅ | ❌ | ❌ | ❌ |
+| Telegram Companion | ✅ | ❌ | ❌ | ❌ |
+| Load Balanced Cluster | ✅ | ❌ | ✅ | ❌ |
+| 100% Free | ✅ | ⚠️ | ⚠️ | ⚠️ |
 
 ---
 
@@ -145,57 +319,6 @@ nexus skill install free-apis
 # Includes: weather, Wikipedia, crypto, HackerNews,
 #           currency, IP geo, dictionary, Reddit, GitHub
 ```
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────┐
-│                  NEXUS CLUSTER                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
-│  │  Node 1  │  │  Node 2  │  │  Node 3  │      │
-│  │ :7701    │  │ :7702    │  │ :7703    │      │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘      │
-│       └─────────────┼─────────────┘            │
-│              ┌──────┴──────┐                   │
-│              │Load Balancer│                   │
-│              │    :7700    │                   │
-│              └─────────────┘                   │
-│  Gateways: CLI | Telegram | Discord | Web API  │
-│  Memory:   SQLite (episodic + semantic)         │
-│  Vault:    AES-256-GCM encrypted SQLite         │
-│  Workers:  Python (research/browser/vision)     │
-└─────────────────────────────────────────────────┘
-```
-
----
-
-## 🐳 One-Command Cluster
-
-```bash
-docker compose up -d
-# Starts: 3 NEXUS nodes + Python workers + Ollama + n8n
-# Load balancer auto-removes dead nodes
-# Health checks every 10s
-```
-
----
-
-## 📊 vs Other Agents
-
-| Feature | NEXUS | OpenClaw | n8n AI | AutoGPT |
-|---|---|---|---|---|
-| Drift Detection | ✅ | ❌ | ❌ | ❌ |
-| Self-Healing | ✅ | ❌ | ❌ | ❌ |
-| Emotional Intelligence | ✅ | ❌ | ❌ | ❌ |
-| Goal Tracking | ✅ | ❌ | ❌ | ⚠️ |
-| Privacy Vault | ✅ | ❌ | ❌ | ❌ |
-| Offline Mode | ✅ | ❌ | ❌ | ❌ |
-| Persona Engine | ✅ | ❌ | ❌ | ❌ |
-| Session Briefing | ✅ | ❌ | ❌ | ❌ |
-| 100% Free | ✅ | ⚠️ | ⚠️ | ⚠️ |
-| Load Balanced | ✅ | ❌ | ✅ | ❌ |
 
 ---
 
