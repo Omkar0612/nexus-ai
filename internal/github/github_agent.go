@@ -3,15 +3,11 @@ package github
 /*
 GitHubAgent — autonomous GitHub operations for NEXUS.
 
-NEXUS GitHubAgent:
-  1. Open issues with auto-labels and assignees
-  2. Comment on issues and PRs
-  3. Create branches from any base
-  4. Review PRs: approve, request changes, comment
-  5. Search code across repositories
-  6. List and triage open issues
-  7. Safety gate: destructive ops require HITL approval
-  8. Full audit logging of every GitHub action
+Security:
+  - Token stored as SecretString — never appears in logs or fmt output
+  - API error responses capped at 512 bytes (no internal detail leakage)
+  - SearchCode query URL-escaped to prevent query-string injection
+  - Response bodies limited to 4 MB (DoS protection)
 */
 
 import (
@@ -19,32 +15,52 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
 
-// GitHubConfig holds GitHub API credentials
+// SecretString wraps a string and masks it in all fmt/log output.
+type SecretString struct{ v string }
+
+// NewSecret wraps a plaintext value as a SecretString.
+func NewSecret(s string) SecretString { return SecretString{v: s} }
+
+// Value returns the raw token (only call when building HTTP headers).
+func (s SecretString) Value() string { return s.v }
+
+// String implements fmt.Stringer — always returns "[REDACTED]".
+func (s SecretString) String() string { return "[REDACTED]" }
+
+// GoString implements fmt.GoStringer — prevents leakage via %#v.
+func (s SecretString) GoString() string { return "github.SecretString([REDACTED])" }
+
+// maxResponseBytes is the maximum number of bytes read from any GitHub API response.
+const maxResponseBytes = 4 * 1024 * 1024 // 4 MB
+
+// GitHubConfig holds GitHub API credentials.
+// Token is a SecretString — it will never appear in log files.
 type GitHubConfig struct {
-	Token     string
+	Token     SecretString
 	Owner     string
 	Repo      string
 	BaseURL   string // default: https://api.github.com
 	Simulated bool
 }
 
-// Issue represents a GitHub issue
+// Issue represents a GitHub issue.
 type Issue struct {
-	Number    int      `json:"number"`
-	Title     string   `json:"title"`
-	Body      string   `json:"body"`
-	State     string   `json:"state"`
-	Labels    []string `json:"labels"`
-	Assignees []string `json:"assignees"`
+	Number    int       `json:"number"`
+	Title     string    `json:"title"`
+	Body      string    `json:"body"`
+	State     string    `json:"state"`
+	Labels    []string  `json:"labels"`
+	Assignees []string  `json:"assignees"`
 	CreatedAt time.Time `json:"created_at"`
-	URL       string   `json:"html_url"`
+	URL       string    `json:"html_url"`
 }
 
-// PullRequest represents a GitHub PR
+// PullRequest represents a GitHub PR.
 type PullRequest struct {
 	Number int    `json:"number"`
 	Title  string `json:"title"`
@@ -54,13 +70,13 @@ type PullRequest struct {
 	URL    string `json:"html_url"`
 }
 
-// GitHubAgent performs autonomous GitHub operations
+// GitHubAgent performs autonomous GitHub operations.
 type GitHubAgent struct {
 	cfg    GitHubConfig
 	client *http.Client
 }
 
-// New creates a GitHubAgent
+// New creates a GitHubAgent.
 func New(cfg GitHubConfig) *GitHubAgent {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = "https://api.github.com"
@@ -71,7 +87,7 @@ func New(cfg GitHubConfig) *GitHubAgent {
 	}
 }
 
-// OpenIssue creates a new GitHub issue
+// OpenIssue creates a new GitHub issue.
 func (g *GitHubAgent) OpenIssue(title, body string, labels, assignees []string) (*Issue, error) {
 	if g.cfg.Simulated {
 		return &Issue{
@@ -93,7 +109,7 @@ func (g *GitHubAgent) OpenIssue(title, body string, labels, assignees []string) 
 	return &issue, nil
 }
 
-// CommentOnIssue adds a comment to an issue or PR
+// CommentOnIssue adds a comment to an issue or PR.
 func (g *GitHubAgent) CommentOnIssue(number int, body string) error {
 	if g.cfg.Simulated {
 		return nil
@@ -102,7 +118,7 @@ func (g *GitHubAgent) CommentOnIssue(number int, body string) error {
 	return g.post(fmt.Sprintf("/repos/%s/%s/issues/%d/comments", g.cfg.Owner, g.cfg.Repo, number), payload, nil)
 }
 
-// CreateBranch creates a new branch from a base ref
+// CreateBranch creates a new branch from a base SHA.
 func (g *GitHubAgent) CreateBranch(name, baseSHA string) error {
 	if g.cfg.Simulated {
 		return nil
@@ -114,7 +130,7 @@ func (g *GitHubAgent) CreateBranch(name, baseSHA string) error {
 	return g.post(fmt.Sprintf("/repos/%s/%s/git/refs", g.cfg.Owner, g.cfg.Repo), payload, nil)
 }
 
-// ListOpenIssues returns open issues for the configured repo
+// ListOpenIssues returns open issues for the configured repo.
 func (g *GitHubAgent) ListOpenIssues() ([]Issue, error) {
 	if g.cfg.Simulated {
 		return []Issue{
@@ -129,13 +145,16 @@ func (g *GitHubAgent) ListOpenIssues() ([]Issue, error) {
 	return issues, nil
 }
 
-// SearchCode searches for code across the repo
+// SearchCode searches for code across the repo.
+// The query is URL-escaped to prevent query-string injection via special characters.
 func (g *GitHubAgent) SearchCode(query string) (string, error) {
 	if g.cfg.Simulated {
 		return fmt.Sprintf("[simulated] code search for: %s", query), nil
 	}
 	var result map[string]interface{}
-	path := fmt.Sprintf("/search/code?q=%s+repo:%s/%s", query, g.cfg.Owner, g.cfg.Repo)
+	// url.QueryEscape prevents '&', '#', '+' etc. from injecting extra params.
+	path := fmt.Sprintf("/search/code?q=%s+repo:%s/%s",
+		url.QueryEscape(query), g.cfg.Owner, g.cfg.Repo)
 	if err := g.get(path, &result); err != nil {
 		return "", err
 	}
@@ -143,7 +162,7 @@ func (g *GitHubAgent) SearchCode(query string) (string, error) {
 	return fmt.Sprintf("%d results for '%s'", int(count), query), nil
 }
 
-// FormatIssueList returns a formatted issue list string
+// FormatIssueList returns a formatted issue list string.
 func FormatIssueList(issues []Issue) string {
 	if len(issues) == 0 {
 		return "✅ No open issues."
@@ -168,15 +187,18 @@ func (g *GitHubAgent) post(path string, payload interface{}, out interface{}) er
 	g.setHeaders(req)
 	resp, err := g.client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("github: request failed: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		rawBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("github API error %d: %s", resp.StatusCode, string(rawBody))
+		// Cap at 512 bytes — avoids leaking internal GitHub error details
+		// and prevents a crafted response from allocating huge buffers.
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return fmt.Errorf("github API error %d", resp.StatusCode)
+		_ = raw // raw is read but not propagated to avoid info leakage
 	}
 	if out != nil {
-		return json.NewDecoder(resp.Body).Decode(out)
+		return json.NewDecoder(io.LimitReader(resp.Body, maxResponseBytes)).Decode(out)
 	}
 	return nil
 }
@@ -189,19 +211,20 @@ func (g *GitHubAgent) get(path string, out interface{}) error {
 	g.setHeaders(req)
 	resp, err := g.client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("github: request failed: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
+		_, _ = io.ReadAll(io.LimitReader(resp.Body, 512)) // drain
 		return fmt.Errorf("github API error %d", resp.StatusCode)
 	}
-	return json.NewDecoder(resp.Body).Decode(out)
+	return json.NewDecoder(io.LimitReader(resp.Body, maxResponseBytes)).Decode(out)
 }
 
 func (g *GitHubAgent) setHeaders(req *http.Request) {
-	req.Header.Set("Authorization", "Bearer "+g.cfg.Token)
+	req.Header.Set("Authorization", "Bearer "+g.cfg.Token.Value())
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "NEXUS-GitHubAgent/1.4")
+	req.Header.Set("User-Agent", "NEXUS-GitHubAgent/1.7")
 }

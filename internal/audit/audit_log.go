@@ -3,29 +3,15 @@ package audit
 /*
 AuditLog — fully queryable agent decision log with rationale.
 
-The #1 enterprise trust blocker for AI agents (IBM, 2025):
-'I can't use an AI agent in production if I can't explain what it did.'
-
-For every NEXUS action, AuditLog records:
-  - WHAT  it did (action, tool called, output)
-  - WHY   it chose that action (reasoning summary)
-  - WHICH memory/context triggered the decision
-  - WHAT  it considered but rejected (alternatives)
-  - RISK  level (low/medium/high) for compliance
-  - WHO   approved it (human-in-loop approval tracking)
-
-Queryable via:
-  nexus audit show                    # last 24 hours
-  nexus audit show --last 7d
-  nexus audit show --risk high
-  nexus audit show --agent drift
-  nexus audit export --format json    # for compliance
-
-No other open-source AI agent ships this.
+Security:
+  - DB file created with 0600 permissions before sql.Open
+  - Entry IDs use crypto/rand (not predictable UnixNano)
 */
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -36,12 +22,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// sqliteTimeFormat stores timestamps with microsecond precision.
-// Using full precision avoids collisions when two entries are recorded
-// within the same second (e.g. in tests with Since-based filtering).
 const sqliteTimeFormat = "2006-01-02 15:04:05.000000"
 
-// RiskLevel classifies the risk of an agent action
+// RiskLevel classifies the risk of an agent action.
 type RiskLevel string
 
 const (
@@ -50,7 +33,7 @@ const (
 	RiskHigh   RiskLevel = "high"
 )
 
-// AuditEntry is a single recorded agent decision
+// AuditEntry is a single recorded agent decision.
 type AuditEntry struct {
 	ID           string            `json:"id"`
 	UserID       string            `json:"user_id"`
@@ -67,7 +50,7 @@ type AuditEntry struct {
 	CreatedAt    time.Time         `json:"created_at"`
 }
 
-// AuditQuery defines filters for querying the audit log
+// AuditQuery defines filters for querying the audit log.
 type AuditQuery struct {
 	UserID    string
 	Agent     string
@@ -78,19 +61,39 @@ type AuditQuery struct {
 	SearchStr string
 }
 
-// Log is the NEXUS audit logging system
+// Log is the NEXUS audit logging system.
 type Log struct {
 	db *sql.DB
 }
 
-// Open initialises (or opens) the audit log database
+// randomID returns a cryptographically random hex ID with the given prefix.
+func randomID(prefix string) string {
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		// fallback: should never happen
+		return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
+	}
+	return prefix + "-" + hex.EncodeToString(b)
+}
+
+// Open initialises (or opens) the audit log database.
 func Open(dataDir string) (*Log, error) {
 	if dataDir == "" {
 		home, _ := os.UserHomeDir()
 		dataDir = filepath.Join(home, ".nexus")
 	}
-	_ = os.MkdirAll(dataDir, 0700)
-	db, err := sql.Open("sqlite3", filepath.Join(dataDir, "audit.db")+"?_journal_mode=WAL")
+	if err := os.MkdirAll(dataDir, 0700); err != nil {
+		return nil, err
+	}
+	dbPath := filepath.Join(dataDir, "audit.db")
+	// Create the file with 0600 before sql.Open so the OS never
+	// exposes it world-readable even momentarily.
+	f, err := os.OpenFile(dbPath, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, fmt.Errorf("audit: create db file: %w", err)
+	}
+	f.Close()
+	db, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL")
 	if err != nil {
 		return nil, err
 	}
@@ -122,17 +125,16 @@ func (l *Log) migrate() error {
 	return err
 }
 
-// Record writes an audit entry
+// Record writes an audit entry.
 func (l *Log) Record(entry AuditEntry) error {
 	if entry.ID == "" {
-		entry.ID = fmt.Sprintf("aud-%d", time.Now().UnixNano())
+		entry.ID = randomID("aud")
 	}
 	if entry.CreatedAt.IsZero() {
 		entry.CreatedAt = time.Now()
 	}
 	altsJSON, _ := json.Marshal(entry.Alternatives)
 	metaJSON, _ := json.Marshal(entry.Meta)
-	// Store with microsecond precision for correct Since/Until comparisons
 	createdAtStr := entry.CreatedAt.UTC().Format(sqliteTimeFormat)
 	_, err := l.db.Exec(
 		`INSERT INTO audit_log
@@ -146,7 +148,7 @@ func (l *Log) Record(entry AuditEntry) error {
 	return err
 }
 
-// Query returns audit entries matching the given filters
+// Query returns audit entries matching the given filters.
 func (l *Log) Query(q AuditQuery) ([]AuditEntry, error) {
 	where := []string{"1=1"}
 	args := []interface{}{}
@@ -212,7 +214,7 @@ func (l *Log) Query(q AuditQuery) ([]AuditEntry, error) {
 	return entries, rows.Err()
 }
 
-// FormatReport renders audit entries as a human-readable report
+// FormatReport renders audit entries as a human-readable report.
 func FormatReport(entries []AuditEntry) string {
 	if len(entries) == 0 {
 		return "📋 No audit entries found for this query."
@@ -244,7 +246,7 @@ func FormatReport(entries []AuditEntry) string {
 	return sb.String()
 }
 
-// ExportJSON returns all entries as a JSON byte slice (for compliance export)
+// ExportJSON returns all entries as a JSON byte slice (for compliance export).
 func (l *Log) ExportJSON(q AuditQuery) ([]byte, error) {
 	entries, err := l.Query(q)
 	if err != nil {
@@ -253,7 +255,7 @@ func (l *Log) ExportJSON(q AuditQuery) ([]byte, error) {
 	return json.MarshalIndent(entries, "", "  ")
 }
 
-// ClassifyRisk auto-classifies an action's risk level
+// ClassifyRisk auto-classifies an action's risk level.
 func ClassifyRisk(action string) RiskLevel {
 	action = strings.ToLower(action)
 	highRisk := []string{"delete", "remove", "drop", "send", "post", "pay", "transfer", "deploy", "execute", "run", "purchase"}
@@ -271,5 +273,5 @@ func ClassifyRisk(action string) RiskLevel {
 	return RiskLow
 }
 
-// Close shuts down the audit log
+// Close shuts down the audit log.
 func (l *Log) Close() error { return l.db.Close() }
