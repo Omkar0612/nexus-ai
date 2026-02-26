@@ -28,7 +28,7 @@ Detects your emotional state and adapts NEXUS tone accordingly.
 
 ### 🎯 Goal Tracker
 Tracks your long-term goals and aligns every response.
-- Infer goals from conversation (no setup needed)
+- Infers goals from conversation (no setup needed)
 - Warns when a task is misaligned with your declared goals
 - Reports goals you haven't worked toward in 7+ days
 - **CLI:** `nexus goals list` | `nexus goals set "goal"`
@@ -73,11 +73,11 @@ Full functionality without internet.
 
 ---
 
-## New Features (v1.1)
+## v1.1 Features
 
 ### 💰 Token Cost Tracker
 Real-time token cost tracking with budget protection.
-- Built-in pricing for Groq, Anthropic, OpenAI, Ollama
+- Built-in pricing for Groq, Anthropic, OpenAI, Ollama (Feb 2026)
 - Daily and monthly budget caps with auto-pause
 - Telegram alert before and when budget is breached
 - Suggests cheaper model alternatives automatically
@@ -97,16 +97,45 @@ Detects and breaks infinite agent loops before they waste tokens.
 - Fires after 3 identical (tool, input) pairs
 - Estimates tokens and cost saved by catching the loop
 - Suggests specific fixes based on tool type
-- Resets cleanly per session
 
 ---
 
-## Roadmap
+## v1.2 Features
 
-- [ ] 🤥 Hallucination Detector — flag unverified factual claims
+### 🤥 Hallucination Detector
+Local self-check on every LLM response. Zero external API cost.
+- Extracts factual claims (dates, numbers, URLs, assertions)
+- Cross-references against memory for contradictions
+- Tags every response: ✅ VERIFIED | 💡 UNCERTAIN | ⚠️ UNVERIFIED | 🚨 CONTRADICTED
+- Auto-retry hint if confidence below threshold
+- Works fully offline
+
+### ⏰ Smart Scheduler
+Timezone-aware cron with condition-based triggers.
+- Timezone-aware scheduling (Dubai, UTC, any IANA zone)
+- Condition-based: only run IF a condition is true
+  - `FileExistsCondition("/tmp/report.csv")` — run only if file appears
+  - Custom conditions: price threshold, API response, any Go function
+- Missed-run detection with configurable catch-up
+- Per-job retry policy with exponential backoff
+- **CLI:** `nexus heartbeat add "name" "0 9 * * *" "task"`
+
+### 📁 Knowledge Base (RAG)
+RAG over your own files. Zero external API. Zero cost.
+- Drop `.md`, `.txt`, `.go`, `.py`, `.json`, `.toml` into `~/.nexus/kb/`
+- Auto-indexed on file change
+- TF-IDF similarity search (no embedding API needed)
+- Context auto-injected into every relevant LLM call
+- Works fully offline
+- **CLI:** `nexus kb add file.md` | `nexus kb search "query"` | `nexus kb stats`
+
+---
+
+## Roadmap (v1.3)
+
 - [ ] 🤝 Multi-Agent Bus — spawn and coordinate sub-agents
-- [ ] 📁 Knowledge Base (RAG) — search your own docs
-- [ ] 🕐 Smart Scheduler — condition-based + event-triggered cron
-- [ ] 📊 Daily Digest — automated morning intelligence briefing
-- [ ] 🌍 Timezone Context — time-aware task scheduling
+- [ ] 📊 Daily Intelligence Digest — automated morning briefing
+- [ ] 🌍 Timezone Context — time-aware task deferral
 - [ ] 🔐 HITL Gate — Telegram approval for high-risk actions
+- [ ] 🗣️ Voice Interface — speak to NEXUS via microphone
+- [ ] 🌐 Browser Agent — autonomous web browsing
