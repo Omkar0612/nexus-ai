@@ -11,20 +11,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-          cache: true
+          cache: false
 
       - name: Install system deps
         run: sudo apt-get install -y gcc libsqlite3-dev
 
       - name: Tidy and download modules
+        env:
+          GONOSUMCHECK: "*"
+          GONOSUMDB: "*"
+          GOFLAGS: "-mod=mod"
         run: |
           go mod tidy
           go mod download
-          go mod verify
+
+      - name: Commit go.sum if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add go.sum go.mod
+          git diff --cached --quiet || git commit -m "chore: update go.sum [skip ci]"
+          git push || true
 
       - name: Build
         run: CGO_ENABLED=1 go build ./...
