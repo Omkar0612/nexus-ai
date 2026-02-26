@@ -50,22 +50,22 @@ const (
 
 // TranscriptEvent is emitted when speech is recognised
 type TranscriptEvent struct {
-	Text       string
-	Confidence float64
-	DurationMs int64
-	Timestamp  time.Time
+	Text             string
+	Confidence       float64
+	DurationMs       int64
+	Timestamp        time.Time
 	WakeWordDetected bool
 }
 
 // VoiceConfig holds configuration for the voice interface
 type VoiceConfig struct {
-	Mode           VoiceMode
-	TTS            TTSEngine
-	WakeWord       string
-	SampleRate     int
-	Language       string
-	WhisperModel   string // tiny/base/small/medium
-	SilenceMs      int    // ms of silence to end utterance
+	Mode         VoiceMode
+	TTS          TTSEngine
+	WakeWord     string
+	SampleRate   int
+	Language     string
+	WhisperModel string // tiny/base/small/medium
+	SilenceMs    int    // ms of silence to end utterance
 }
 
 // DefaultConfig returns sensible defaults
@@ -148,10 +148,11 @@ func (v *VoiceInterface) SimulateInput(text string) {
 	})
 }
 
-// Speak sends text to the TTS engine
+// Speak sends text to the configured TTS engine
 func (v *VoiceInterface) Speak(text string) error {
 	switch v.cfg.TTS {
-	case TTSSilent, ModeSimulated:
+	case TTSSilent:
+		// In simulated/silent mode, just log — no audio output
 		log.Debug().Str("text", truncate(text, 80)).Msg("TTS (silent): would speak")
 		return nil
 	case TTSEspeak:
@@ -200,4 +201,12 @@ func (v *VoiceInterface) Status() string {
 
 func containsWakeWord(text, wakeWord string) bool {
 	return strings.Contains(strings.ToLower(text), strings.ToLower(wakeWord))
+}
+
+// truncate shortens a string to max characters, appending '...' if cut
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "..."
 }
