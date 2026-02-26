@@ -1,472 +1,365 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=200&section=header&text=NEXUS%20AI&fontSize=80&fontColor=fff&animation=twinkling&fontAlignY=35&desc=The%20AI%20Agent%20That%20Actually%20Works&descAlignY=60&descSize=20" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=220&section=header&text=NEXUS&fontSize=90&fontColor=fff&animation=twinkling&fontAlignY=38&desc=An%20AI%20agent%20that%20actually%20works.&descAlignY=62&descSize=22" width="100%"/>
+
+<br/>
 
 [![CI](https://github.com/Omkar0612/nexus-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Omkar0612/nexus-ai/actions/workflows/ci.yml)
 [![Stars](https://img.shields.io/github/stars/Omkar0612/nexus-ai?style=for-the-badge&logo=github&color=FFD700)](https://github.com/Omkar0612/nexus-ai/stargazers)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
-[![Go](https://img.shields.io/badge/Go-1.22-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
-[![Free](https://img.shields.io/badge/Cost-100%25%20Free-brightgreen?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](https://github.com/Omkar0612/nexus-ai)
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-ff69b4?style=for-the-badge)](CONTRIBUTING.md)
-
-<br/>
-
-> **I analysed 500+ Reddit complaints about AI agents and built fixes for every single one.**
+[![Go 1.22](https://img.shields.io/badge/Go-1.22-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
+[![MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
+[![100% Free](https://img.shields.io/badge/Cost-Zero-brightgreen?style=for-the-badge&logo=opensourceinitiative)](https://github.com/Omkar0612/nexus-ai)
 
 <br/>
 
 </div>
 
 ---
-
-## 🗺️ What's Inside
 
 <div align="center">
 
-| 🏛️ v1.0–1.2 | 🤖 v1.3 | 📊 v1.4 |
-|:---|:---|:---|
-| Drift Detection | Multi-Agent Bus | Analytics Dashboard |
-| Self-Healing | Daily Digest | Phone Agent |
-| Emotional Intelligence | HITL Gate | Email Agent |
-| Goal Tracking | Voice Interface | Notes Agent |
-| Session Briefing | Browser Agent | GitHub Agent |
-| Privacy Vault · Persona Engine · Offline Mode · Load Balancer | | Telegram Companion |
+# Most AI agents don't work.
+### We fixed that.
 
 </div>
 
 ---
 
-## ⚡ Quick Start
+<div align="center">
 
 ```bash
-# 1. Clone & build
 git clone https://github.com/Omkar0612/nexus-ai
 cd nexus-ai && make build
-
-# 2. Add your free Groq key (console.groq.com)
-cp config/nexus.example.toml ~/.nexus/nexus.toml
-
-# 3. Run
 nexus start
-nexus chat
 ```
 
-> 🆓 **No paid API needed.** Works with Groq (free), Gemini (free), Ollama (local), OpenRouter (free tier).
+**That's it. You're running.**
+
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+
+## The problems. The fixes.
+
+</div>
+
+<br/>
+
+```
+╭───────────────────────────────────────────────────────────────╮
+│                                                               │
+│  “The agent forgot what it was doing.”                        │
+│                                                               │
+│  ✔  NEXUS has a Drift Detector.                               │
+│     It notices stalled work before you do.                    │
+│                                                               │
+╯───────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────────────────────────────────────────╮
+│                                                               │
+│  “It failed. Again. With no explanation.”                     │
+│                                                               │
+│  ✔  NEXUS is Self-Healing.                                    │
+│     Diagnoses the cause. Switches providers. Retries.         │
+│                                                               │
+╯───────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────────────────────────────────────────╮
+│                                                               │
+│  “I can't trust it. I don't know what it did or why.”        │
+│                                                               │
+│  ✔  NEXUS has a Human-in-the-Loop Gate.                       │
+│     Low risk: silent. Medium: audited. High: asks you first.  │
+│                                                               │
+╯───────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────────────────────────────────────────╮
+│                                                               │
+│  “I lose internet. Everything stops.”                        │
+│                                                               │
+│  ✔  NEXUS works Offline.                                      │
+│     Switches to local Ollama. Queues tasks. Syncs when back.  │
+│                                                               │
+╯───────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────────────────────────────────────────╮
+│                                                               │
+│  “It costs $200/month and I need 3 paid APIs.”               │
+│                                                               │
+│  ✔  NEXUS costs nothing.                                      │
+│     Groq, Gemini, Ollama, OpenRouter — all free.              │
+│                                                               │
+╯───────────────────────────────────────────────────────────────╯
+```
+
+---
+
+<br/>
+
+<div align="center">
+
+## One command. Four agents. 47 seconds.
+
+</div>
+
+```
+╔═════════════════════════════════════════════════════════════╗
+║                                                             ║
+║  > research YC 2026 AI startups, analyze their pricing,     ║
+║    write a competitive analysis, save as report.md           ║
+║                                                             ║
+╠═════════════════════════════════════════════════════════════╣
+║                                                             ║
+║  🔍  Researcher  ──▶  fetching data                       ║
+║  📊  Analyst     ──▶  comparing pricing                   ║
+║  ✍️   Writer      ──▶  drafting analysis                   ║
+║  💾  File Agent  ──▶  saving report.md                    ║
+║                                                             ║
+╠═════════════════════════════════════════════════════════════╣
+║  ✅  Done in 47 seconds.                                    ║
+╚═════════════════════════════════════════════════════════════╝
+```
+
+<div align="center">
+
+NEXUS routes across **Researcher · Analyst · Writer · Coder · Reviewer** automatically.
+You just describe what you want.
+
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+
+## It knows what you need before you ask.
+
+</div>
+
+```
+╔══════════════════════════════════╗
+║  🌅  Good morning.               ║
+║                                ║
+║  📈  Goals on track    3 / 4    ║
+║  ⚠️   Stalled task       1       ║
+║  💰  LLM cost today    $0.00    ║
+║  📚  New KB docs        2       ║
+╚══════════════════════════════════╝
+```
+
+<div align="center">
+
+Every morning. Automatically. Before you open your laptop.
+
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+
+## How it thinks.
+
+</div>
+
+```mermaid
+graph LR
+    YOU([You]) -->|speaks or types| GW
+
+    subgraph GW[" "]
+        CLI[🖥️ CLI]
+        TG[📱 Telegram]
+        VOICE[🎤 Voice]
+        API[🌐 API]
+    end
+
+    GW --> HITL
+
+    HITL{🛡️ Risk?}
+    HITL -->|low| AUTO[✅ Execute]
+    HITL -->|medium| AUDIT[📋 Execute + Audit]
+    HITL -->|high| HUMAN[📱 Ask you first]
+
+    AUTO & AUDIT & HUMAN --> BUS
+
+    subgraph BUS["🤖 Agent Bus"]
+        R[🔍 Research]
+        C[💻 Code]
+        W[✍️ Write]
+        A[📊 Analyse]
+    end
+
+    BUS --> MEM[🧠 Memory]
+    BUS --> OUT[Result → You]
+```
+
+---
+
+<br/>
+
+<div align="center">
+
+## Everything it can do.
+
+</div>
+
+<br/>
+
+<div align="center">
+
+| | Feature | What it does |
+|:---:|:---|:---|
+| 🔍 | **Drift Detector** | Notices stalled work before you do |
+| 🏥 | **Self-Healing** | Diagnoses failures, switches LLMs, retries |
+| 🎭 | **Emotional Intelligence** | Reads your tone. Responds accordingly |
+| 🎯 | **Goal Tracking** | Warns when you're going off track |
+| 🔐 | **Privacy Vault** | AES-256 secrets. Never touches an LLM |
+| 📴 | **Offline Mode** | Works without internet. Syncs when back |
+| 🎭 | **Persona Engine** | Work / Focus / Client / Research modes |
+| 📬 | **Session Briefing** | Catches you up when you return |
+| 🤖 | **Multi-Agent Bus** | Researcher, Coder, Writer, Analyst, Reviewer |
+| 🛡️ | **HITL Gate** | Low/Medium/High risk classification per action |
+| 🎤 | **Voice Interface** | Offline Whisper → TTS. Fully local |
+| 🌐 | **Browser Agent** | Reads the web. Injects into context |
+| 🌅 | **Daily Digest** | Morning briefing. Goals. Drift. Cost |
+| 📊 | **Analytics Dashboard** | Cost, agents, goals at localhost:7700 |
+| 📞 | **Phone Agent** | Call or SMS via Twilio |
+| 📧 | **Email Agent** | Read, classify, reply via IMAP/SMTP |
+| 📝 | **Notes Agent** | Capture, search, export meeting notes |
+| 🐙 | **GitHub Agent** | Issues, PRs, branches — HITL on destructive ops |
+| 📱 | **Telegram Companion** | Full control from your phone |
+| ⚖️ | **Load Balanced Cluster** | 3 nodes. Auto-failover. One command |
+
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+
+## The only agent that costs nothing.
+
+</div>
+
+<br/>
+
+<div align="center">
+
+| Provider | Model | Cost |
+|:---:|:---:|:---:|
+| **Groq** | Llama 3.3 70B · 300 tok/s | ![free](https://img.shields.io/badge/-free-22c55e?style=flat-square) |
+| **Gemini** | 2.0 Flash · 1M tok/day | ![free](https://img.shields.io/badge/-free-22c55e?style=flat-square) |
+| **Ollama** | Any model · local | ![free](https://img.shields.io/badge/-free-22c55e?style=flat-square) |
+| **OpenRouter** | Multiple models | ![free tier](https://img.shields.io/badge/-free%20tier-22c55e?style=flat-square) |
+
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+
+## Others vs NEXUS.
+
+</div>
+
+<br/>
+
+<div align="center">
+
+| | NEXUS | AutoGPT | n8n AI | OpenClaw |
+|:---|:---:|:---:|:---:|:---:|
+| Fixes its own failures | ✅ | ❌ | ❌ | ❌ |
+| Knows when work is stalled | ✅ | ❌ | ❌ | ❌ |
+| Asks before deleting your data | ✅ | ⚠️ | ⚠️ | ❌ |
+| Works without the internet | ✅ | ❌ | ❌ | ❌ |
+| Costs $0 to run | ✅ | ⚠️ | ⚠️ | ⚠️ |
+| Reads your email | ✅ | ❌ | ⚠️ | ❌ |
+| Calls your phone | ✅ | ❌ | ⚠️ | ❌ |
+| Runs on 3 nodes with failover | ✅ | ❌ | ✅ | ❌ |
+| Briefs you every morning | ✅ | ❌ | ❌ | ❌ |
+| Reads your tone | ✅ | ❌ | ❌ | ❌ |
+
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+
+## The full setup. One command.
+
+</div>
+
+```bash
+docker compose up -d
+# 3 NEXUS nodes + load balancer + Ollama + n8n
+# Health checks every 10s. Dead nodes auto-removed.
+```
+
+---
+
+<br/>
+
+<div align="center">
+
+## On your phone.
+
+</div>
 
 <details>
-<summary>📱 <b>Use on your phone via Telegram (click to expand)</b></summary>
+<summary>&nbsp;&nbsp;<b>📱 Set up Telegram companion &rarr;</b></summary>
+
+<br/>
 
 ```toml
-# Add to ~/.nexus/nexus.toml
+# ~/.nexus/nexus.toml
 [telegram]
-token           = "your-bot-token"
+token            = "your-bot-token"
 allowed_user_ids = [your-telegram-id]
-admin_chat_id   = your-telegram-id
+admin_chat_id    = your-telegram-id
 ```
 
 ```bash
 nexus telegram start
-# Control NEXUS from anywhere — no app install
+```
+
+```
+/chat    — talk to NEXUS
+/drift   — what’s stalled
+/digest  — morning brief
+/approve — approve a risky action
+/vault   — get a secret
 ```
 
 </details>
 
 ---
 
-## 🏗️ Architecture
-
-```mermaid
-graph TB
-    subgraph Gateways
-        CLI[🖥️ CLI]
-        TG[📱 Telegram]
-        API[🌐 Web API]
-        VOICE[🎤 Voice]
-    end
-
-    subgraph Cluster["⚖️ Load Balanced Cluster :7700"]
-        N1[Node 1\n:7701]
-        N2[Node 2\n:7702]
-        N3[Node 3\n:7703]
-    end
-
-    subgraph Agents["🤖 Multi-Agent Bus"]
-        RES[🔍 Researcher]
-        COD[💻 Coder]
-        WRI[✍️ Writer]
-        ANA[📊 Analyst]
-        REV[👁️ Reviewer]
-    end
-
-    subgraph Memory["🧠 Memory & Storage"]
-        EPI[Episodic SQLite]
-        KB[Knowledge Base]
-        VAULT[🔐 AES-256 Vault]
-        AUDIT[📋 Audit Log]
-    end
-
-    subgraph Integrations["🔌 Integrations"]
-        TWILIO[📞 Twilio]
-        EMAIL[📧 IMAP/SMTP]
-        GH[🐙 GitHub]
-        N8N[⚙️ n8n]
-    end
-
-    CLI & TG & API & VOICE --> Cluster
-    Cluster --> Agents
-    Agents --> Memory
-    Agents --> Integrations
-```
-
----
-
-## 🆓 Free LLM Providers
-
 <div align="center">
 
-| Provider | Model | Speed | Daily Limit |
-|:---:|:---:|:---:|:---:|
-| ![Groq](https://img.shields.io/badge/Groq-F55036?style=flat-square&logo=groq&logoColor=white) | Llama 3.3 70B | ⚡ 300+ tok/s | Unlimited |
-| ![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=flat-square&logo=google&logoColor=white) | 2.0 Flash | ⚡ Fast | 1M tokens |
-| ![Ollama](https://img.shields.io/badge/Ollama-000000?style=flat-square&logoColor=white) | Any model | 🖥️ Local | Unlimited |
-| ![OpenRouter](https://img.shields.io/badge/OpenRouter-6C47FF?style=flat-square&logoColor=white) | Multiple | ⚡ Fast | Free tier |
-| ![Together](https://img.shields.io/badge/Together_AI-FF6B6B?style=flat-square&logoColor=white) | Multiple | ⚡ Fast | $25 credits |
+## Built by the community.
 
-</div>
+See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+Most wanted: new skills · free API integrations · use case examples
 
 ---
-
-## 🧠 Core Features (v1.0–1.2)
-
-<table>
-<tr>
-<td width="50%">
-
-### 🔍 Drift Detector
-```
-🔴 [HIGH] 'webhook handler' stalled
-         → last touched 2 days ago
-💡 Resume or close this task?
-
-🟡 [MEDIUM] Follow-up missed
-           → 'ping client about invoice'
-💡 Did you follow up?
-```
-
-</td>
-<td width="50%">
-
-### 🏥 Self-Healing
-```
-⚠️  Task 'daily-briefing' failed (1/3)
-ROOT CAUSE: Groq rate limit at 06:00 UTC
-FIX: Switching to Gemini Flash...
-     Retrying in 30s...
-✅  Task recovered successfully.
-```
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🎭 Emotional Intelligence
-```
-You:   "this is STILL not working ugh"
-NEXUS: detects → frustrated + stressed
-       responds → empathetic, solution-first
-       "Here's the fix: [direct answer]"
-```
-
-</td>
-<td width="50%">
-
-### 🎯 Persona Engine
-```bash
-nexus persona use work      # code-heavy
-nexus persona use focus     # ≤200 words
-nexus persona use client    # professional
-nexus persona use research  # deep + cited
-nexus persona create mine \
-  --prompt "Always use bullet points"
-```
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🔐 Privacy Vault
-```bash
-nexus vault store GROQ_KEY gsk_xxx \
-  --zone business
-# AES-256-GCM encrypted
-# NEVER sent to any LLM
-```
-
-</td>
-<td width="50%">
-
-### 📴 Offline Mode
-```bash
-nexus status
-# 📴 Offline (Ollama active)
-#    3 tasks queued for sync
-# Auto-switches on disconnect
-# Auto-resumes on reconnect
-```
-
-</td>
-</tr>
-</table>
-
----
-
-## 🤖 Multi-Agent System (v1.3)
-
-### Agent Bus — Real Example
-
-```
-╔══════════════════════════════════════════════════════════╗
-║  nexus chat                                              ║
-║  > research YC 2026 startups, analyze pricing,           ║
-║    write competitive analysis, save as report.md         ║
-╠══════════════════════════════════════════════════════════╣
-║  [1/4] 🔍 Researcher  → fetching YC 2026 batch data      ║
-║  [2/4] 📊 Analyst     → comparing pricing models         ║
-║  [3/4] ✍️  Writer      → drafting competitive analysis    ║
-║  [4/4] 💾 File Agent  → saving report.md                 ║
-╠══════════════════════════════════════════════════════════╣
-║  ✅ Done in 47s                                          ║
-╚══════════════════════════════════════════════════════════╝
-```
-
-**Agent roles:** `researcher` · `coder` · `writer` · `analyst` · `reviewer`
-
-### 🛡️ Human-in-the-Loop (HITL) Gate
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  Risk Classification                                    │
-├──────────┬────────────────────────────────────────────  │
-│ 🟢 LOW   │ auto-executes silently                       │
-│ 🟡 MED   │ executes + writes audit log entry            │
-│ 🔴 HIGH  │ pauses → sends Telegram approval request     │
-│ 🛑 LOCK  │ nexus lock → blocks ALL medium/high actions  │
-└──────────┴────────────────────────────────────────────  ┘
-```
-
-### 🎤 Voice Interface
-```bash
-nexus voice start
-# 🎤 Listening... (Whisper — fully offline)
-# Speak your command → NEXUS replies via TTS
-# Backends: ElevenLabs · piper (local) · silent
-```
-
-### 🌐 Browser Agent
-```bash
-nexus browse "extract top 10 repos from github.com/trending"
-# 🌐 Navigating  → github.com/trending
-# 📸 Extracting  → content scraped
-# ✅ Injecting   → 10 repos into context
-# 🔒 Safety: URL allowlist · depth limit · loop detection
-```
-
-### 🌅 Daily Digest
-```
-╔══════════════════════════════════╗
-║  🌅 Good morning, Omkar          ║
-║  📈 Goals on track:    3 / 4     ║
-║  ⚠️  Drift signals:    1 stalled  ║
-║  💰 LLM spend:         $0.00     ║
-║  📚 KB highlights:     2 new     ║
-╚══════════════════════════════════╝
-```
-
----
-
-## 📊 Analytics & Integrations (v1.4)
-
-<table>
-<tr>
-<td width="50%">
-
-### 📊 Analytics Dashboard
-```bash
-nexus dashboard
-# → http://localhost:7700/dashboard
-#
-# 📈 Cost over time
-# 🤖 Agent stats
-# 🎯 Goal progress
-# 📋 Audit trail
-# 🔍 Drift history
-```
-
-</td>
-<td width="50%">
-
-### 📞 Phone Agent
-```bash
-nexus phone call +971xxxxxxx \
-  --message "Meeting in 10 minutes"
-nexus phone sms +971xxxxxxx \
-  --message "report.md saved ✅"
-# Inbound → NEXUS voice pipeline
-```
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 📧 Email Agent
-```bash
-nexus email read       # classify inbox
-nexus email reply 42   # LLM draft + send
-nexus email rules      # auto-responders
-# 🔒 Secrets redacted before LLM
-```
-
-</td>
-<td width="50%">
-
-### 📝 Notes Agent
-```bash
-nexus notes capture    # voice/text → notes
-nexus notes search "Q2 strategy"
-nexus notes export meeting-2026 \
-  --format markdown
-# ✅ Action items auto-extracted
-```
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🐙 GitHub Agent
-```bash
-nexus github issue create \
-  --repo myorg/repo \
-  --title "Bug: login fails"
-nexus github pr review 42
-# ⚠️ Destructive ops → HITL approval
-```
-
-</td>
-<td width="50%">
-
-### 📱 Telegram Companion
-```
-/chat    → chat with NEXUS
-/drift   → stalled task check
-/digest  → morning briefing
-/vault   → retrieve secrets
-/approve → approve high-risk actions
-+ inline keyboard + voice messages
-```
-
-</td>
-</tr>
-</table>
-
----
-
-## 📊 NEXUS vs The Competition
-
-<div align="center">
-
-| Feature | NEXUS | OpenClaw | n8n AI | AutoGPT |
-|:---|:---:|:---:|:---:|:---:|
-| 🔍 Drift Detection | ✅ | ❌ | ❌ | ❌ |
-| 🏥 Self-Healing | ✅ | ❌ | ❌ | ❌ |
-| 🎭 Emotional Intelligence | ✅ | ❌ | ❌ | ❌ |
-| 🎯 Goal Tracking | ✅ | ❌ | ❌ | ⚠️ |
-| 🔐 Privacy Vault | ✅ | ❌ | ❌ | ❌ |
-| 📴 Offline Mode | ✅ | ❌ | ❌ | ❌ |
-| 🎭 Persona Engine | ✅ | ❌ | ❌ | ❌ |
-| 📬 Session Briefing | ✅ | ❌ | ❌ | ❌ |
-| 🤖 Multi-Agent Bus | ✅ | ❌ | ⚠️ | ⚠️ |
-| 🛡️ HITL Gate | ✅ | ❌ | ⚠️ | ⚠️ |
-| 🎤 Voice Interface | ✅ | ❌ | ❌ | ❌ |
-| 🌐 Browser Agent | ✅ | ❌ | ❌ | ✅ |
-| 🌅 Daily Digest | ✅ | ❌ | ❌ | ❌ |
-| 📊 Analytics Dashboard | ✅ | ❌ | ⚠️ | ❌ |
-| 📞 Phone / SMS Agent | ✅ | ❌ | ⚠️ | ❌ |
-| 📧 Email Agent | ✅ | ❌ | ⚠️ | ❌ |
-| 📝 Notes Agent | ✅ | ❌ | ❌ | ❌ |
-| 🐙 GitHub Agent | ✅ | ❌ | ❌ | ❌ |
-| 📱 Telegram Companion | ✅ | ❌ | ❌ | ❌ |
-| ⚖️ Load Balanced Cluster | ✅ | ❌ | ✅ | ❌ |
-| 🆓 100% Free | ✅ | ⚠️ | ⚠️ | ⚠️ |
-
-</div>
-
----
-
-## 🐳 One-Command Cluster
-
-```bash
-docker compose up -d
-```
-
-```
-┌─────────────────────────────────────────┐
-│  🐳 NEXUS Docker Stack                  │
-│                                         │
-│  ✅ nexus-node-1   :7701                │
-│  ✅ nexus-node-2   :7702                │
-│  ✅ nexus-node-3   :7703                │
-│  ✅ load-balancer  :7700                │
-│  ✅ python-workers                      │
-│  ✅ ollama                              │
-│  ✅ n8n            :5678                │
-│                                         │
-│  Health checks every 10s               │
-│  Dead nodes auto-removed               │
-└─────────────────────────────────────────┘
-```
-
----
-
-## 🔌 Connect to Anything
-
-```bash
-# 2000+ integrations via n8n
-nexus skill install n8n-bridge
-
-# MCP Protocol (GitHub, Postgres, Slack, Maps...)
-# nexus.toml:
-[[mcp.servers]]
-name    = "github"
-command = "npx @modelcontextprotocol/server-github"
-
-# Zero-key free APIs included:
-# weather · Wikipedia · crypto · HackerNews
-# currency · IP geo · dictionary · Reddit
-nexus skill install free-apis
-```
-
----
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Most wanted:
-- 🔧 New skills (`.toml` + Python worker)
-- 🌐 New free API integrations
-- 📖 Use case examples & tutorials
-
----
-
-## ⭐ Star History
-
-<div align="center">
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Omkar0612/nexus-ai&type=Date)](https://star-history.com/#Omkar0612/nexus-ai)
 
-**If NEXUS saved you time — please star the repo!**
+<br/>
+
+*If NEXUS saved you time — a star means a lot.*
 
 </div>
 
@@ -474,8 +367,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Most wanted:
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer" width="100%"/>
 
-**MIT License — free forever, use it however you want.**
+**MIT — free forever.**
 
 </div>
