@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+UI-to-API;Hive-Mind+Mesh+%E2%80%A2+Neuro-Fuzzing;NL-to-n8n+DAG+%E2%80%A2+Token+Stock+Market" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+UI-to-API;Hive-Mind+Mesh+%E2%80%A2+Liquid+Context;NL-to-n8n+DAG+%E2%80%A2+Token+Stock+Market" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -98,6 +98,10 @@ The WebUI uses an ultra-lightweight `//go:embed` architecture with zero JS frame
 
 ## ✨ Features that fix the broken agent ecosystem
 
+### 💧 Agentic Memory Consolidation (Liquid Context)
+> *NEXUS never forgets, and it never hits a context limit.*
+When your chat history bloats past 8,000 tokens, NEXUS triggers a background "dream state". It reads the raw, bloated history, strips out the conversational filler, and semantically compresses it into high-density "Concepts". A 5,000-token sprawling conversation is mathematically reduced into a 50-token factual block and re-injected into SQLite. Infinite memory, zero amnesia.
+
 ### 📈 Token Stock Market (Dynamic Cost Arbitrage)
 > *Never overpay for an API call again.*
 When a task hits the Multi-Agent Bus, NEXUS pings the `/pricing` and `/health` endpoints of Groq, OpenRouter, Gemini, and your local Ollama instance. It uses an arbitrage formula `(Cost * 100) + (Latency * 10)` to instantly route the payload to the cheapest, fastest model available at that exact millisecond. If Groq hits a 429 Rate Limit, the market instantly evades it and falls back to Gemini.
@@ -137,11 +141,6 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 🟡 [MEDIUM] Follow-up missed — 'ping client about invoice' (3 days)
 ```
 
-### 🧠 Deep Memory
-- **Episodic** — SQLite conversation history
-- **Semantic** — SQLite Vector Search with Ollama Embeddings (fully local)
-- **Vault** — AES-256-GCM encrypted local secrets
-
 ---
 
 ## 🆓 Free LLM Providers Supported
@@ -159,14 +158,14 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 
 | Capability | NEXUS | AutoAgent | AutoGPT | CrewAI | LangChain |
 |:---|:---:|:---:|:---:|:---:|:---:|
+| **Liquid Context (Amnesia fix)**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Token Arbitrage Routing**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **NL-to-n8n DAG Compiler** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Agentic Fuzzing (Security)**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **P2P Mesh Computing** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Zero-Latency (Pre-Compute)**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Zero-Code Agent Generation**| ✅ (Hot WASM) | ✅ (Docker) | ❌ | ❌ | ❌ |
+| **Zero-Code Agent Gen** | ✅ (Hot WASM) | ✅ (Docker) | ❌ | ❌ | ❌ |
 | **Reverse Engineer UI to API**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Self-healing failures** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Shadow Mode Evolution** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Risk gate (HITL)** | ✅ | ❌ | ⚠️ | ⚠️ | ❌ |
 
