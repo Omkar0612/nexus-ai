@@ -193,9 +193,8 @@ func (g *GitHubAgent) post(path string, payload interface{}, out interface{}) er
 	if resp.StatusCode >= 400 {
 		// Cap at 512 bytes — avoids leaking internal GitHub error details
 		// and prevents a crafted response from allocating huge buffers.
-		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		_, _ = io.ReadAll(io.LimitReader(resp.Body, 512)) // drain
 		return fmt.Errorf("github API error %d", resp.StatusCode)
-		_ = raw // raw is read but not propagated to avoid info leakage
 	}
 	if out != nil {
 		return json.NewDecoder(io.LimitReader(resp.Body, maxResponseBytes)).Decode(out)
