@@ -1,14 +1,21 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/Omkar0612/nexus-ai/internal/router"
 	"github.com/Omkar0612/nexus-ai/internal/types"
 	"github.com/Omkar0612/nexus-ai/internal/webui"
+	
+	// v1.8 feature imports
+	"github.com/Omkar0612/nexus-ai/internal/routing"
+	"github.com/Omkar0612/nexus-ai/internal/mesh"
+	
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -43,7 +50,7 @@ func runStart(cmd *cobra.Command, _ []string) error {
 	webuiAddr, _ := cmd.Flags().GetString("webui-addr")
 	noWebUI, _ := cmd.Flags().GetBool("no-webui")
 
-	fmt.Printf("\n\033[35m  NEXUS AI v1.7\033[0m\n")
+	fmt.Printf("\n\033[35m  NEXUS AI v1.8 — Autonomous OS\033[0m\n")
 	fmt.Printf("  Gateway : %s:%d\n", host, port)
 	if !noWebUI {
 		fmt.Printf("  Web UI  : http://localhost%s\n", webuiAddr)
@@ -51,6 +58,7 @@ func runStart(cmd *cobra.Command, _ []string) error {
 	fmt.Printf("  Skills  : run 'nexus skills list' to see all plugins\n")
 	fmt.Println()
 
+	// 1. Initialize LLM Base Router (v1.7)
 	llmCfg := types.LLMConfig{
 		Provider:   getEnvOrDefault("NEXUS_LLM_PROVIDER", "ollama"),
 		Model:      getEnvOrDefault("NEXUS_LLM_MODEL", "llama3.2"),
@@ -59,8 +67,35 @@ func runStart(cmd *cobra.Command, _ []string) error {
 		TimeoutSec: 120,
 	}
 	r := router.New(llmCfg)
-	log.Info().Str("provider", llmCfg.Provider).Str("model", llmCfg.Model).Msg("LLM router ready")
+	
+	// Create context for daemon lifecycle
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	// 2. Initialize Token Stock Market (Dynamic Routing)
+	market := routing.NewMarket(60 * time.Second)
+	market.Start(ctx)
+	defer market.Stop()
+
+	// 3. Initialize Hive-Mind Mesh P2P
+	localNode := &mesh.Node{
+		ID:      fmt.Sprintf("nexus-%s", os.Getenv("USER")),
+		Address: fmt.Sprintf("%s:%d", host, port),
+		Profile: mesh.HardwareProfile{
+			HasGPU: os.Getenv("NEXUS_HAS_GPU") == "true",
+		},
+	}
+	meshNet := mesh.NewNetwork(localNode, nil) // Transport client injection pending
+	discovery := mesh.NewDiscovery(meshNet, localNode)
+	
+	// Start mDNS broadcast (errors logged but non-fatal if offline)
+	if err := discovery.Start(ctx, port); err != nil {
+		log.Warn().Err(err).Msg("Mesh discovery disabled (mDNS failed)")
+	} else {
+		defer discovery.Stop()
+	}
+
+	// 4. Initialize the Web UI
 	if !noWebUI {
 		srv := webui.New(webuiAddr, log.Logger, r)
 		go func() {
@@ -76,6 +111,7 @@ func runStart(cmd *cobra.Command, _ []string) error {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+	
 	log.Info().Msg("NEXUS shutting down gracefully")
 	return nil
 }
