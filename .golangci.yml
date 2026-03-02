@@ -6,10 +6,6 @@ run:
   timeout: 5m
   tests: true
   modules-download-mode: readonly
-  skip-dirs:
-    - vendor
-    - testdata
-    - examples
 
 linters:
   disable-all: true
@@ -21,6 +17,11 @@ issues:
   max-same-issues: 0
   new: false
   fix: false
+  
+  exclude-dirs:
+    - vendor
+    - testdata
+    - examples
 
 output:
   formats:
