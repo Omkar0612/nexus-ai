@@ -20,7 +20,7 @@ func (m *mockGate) AskPermission(ctx context.Context, riskLevel, prompt string) 
 }
 
 func TestShadowEvolution_CostSavings(t *testing.T) {
-	gate := &mockGate{willApprove: true}
+	// Removed unused gate variable
 	engine := NewShadowManager(ModeActive)
 	engine.Start()
 	defer engine.Stop()

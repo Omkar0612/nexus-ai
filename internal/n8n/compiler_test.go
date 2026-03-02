@@ -1,7 +1,6 @@
 package n8n
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 	"testing"
