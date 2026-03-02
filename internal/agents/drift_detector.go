@@ -23,6 +23,7 @@ import (
 )
 
 // DriftSignal represents a detected work drift pattern
+// Trigger auto-format workflow
 type DriftSignal struct {
 	Type        string    // stalled_task, missed_followup, context_loss, repetitive_failure
 	Severity    string    // low, medium, high
