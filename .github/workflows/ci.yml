@@ -2,13 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,11 +19,24 @@ jobs:
         with:
           go-version: '1.22'
           check-latest: true
+          cache: true
+
+      - name: Install CGO dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc
 
       - name: Install dependencies and Tidy
         run: |
           go mod download
           go mod tidy
+
+      - name: Verify go.mod and go.sum are clean
+        run: |
+          git diff --exit-code go.mod go.sum || (
+            echo "::error::go.mod or go.sum is not clean. Run 'go mod tidy' locally."
+            exit 1
+          )
 
       - name: Build
         env:
@@ -32,10 +46,29 @@ jobs:
       # Note: -race is intentionally omitted.
       # go-sqlite3 is a CGO library and is incompatible with the Go race detector,
       # causing false-positive DATA RACE failures.
-      - name: Test
+      - name: Run Tests
         env:
           CGO_ENABLED: 1
-        run: go test ./... -coverprofile=coverage.txt -covermode=atomic
+        run: go test ./... -v -coverprofile=coverage.txt -covermode=atomic
+
+      - name: Generate Coverage Report
+        if: always()
+        run: |
+          go tool cover -func=coverage.txt -o=coverage.txt
+          echo "## Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat coverage.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.txt
+          flags: unittests
+          name: codecov-nexus-ai
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       # gosec runs in advisory mode (-no-fail): issues are reported but do not
       # block the build. False positives are suppressed with //nolint:gosec at source.
@@ -43,3 +76,47 @@ jobs:
         uses: securego/gosec@master
         with:
           args: -no-fail -fmt text ./...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout=5m
+
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Check formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "::error::Code is not formatted. Run 'gofmt -w .' locally."
+            gofmt -d .
+            exit 1
+          fi
+
+      - name: Check Go vet
+        run: go vet ./...
