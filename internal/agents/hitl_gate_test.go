@@ -7,9 +7,9 @@ import (
 )
 
 func TestHITLLowRiskAutoExecute(t *testing.T) {
-	gate := NewHITLGate(5*time.Second, nil)
+	_ = NewHITLGate(5*time.Second, nil)
 	executed := false
-	err := gate.Execute(context.Background(), "read file", "user requested", "low", func(ctx context.Context) error {
+	err := NewHITLGate(5*time.Second, nil).Execute(context.Background(), "read file", "user requested", "low", func(ctx context.Context) error {
 		executed = true
 		return nil
 	})
@@ -22,9 +22,9 @@ func TestHITLLowRiskAutoExecute(t *testing.T) {
 }
 
 func TestHITLMediumRiskAutoExecute(t *testing.T) {
-	gate := NewHITLGate(5*time.Second, nil)
+	_ = NewHITLGate(5*time.Second, nil)
 	executed := false
-	err := gate.Execute(context.Background(), "update config", "user requested", "medium", func(ctx context.Context) error {
+	err := NewHITLGate(5*time.Second, nil).Execute(context.Background(), "update config", "user requested", "medium", func(ctx context.Context) error {
 		executed = true
 		return nil
 	})

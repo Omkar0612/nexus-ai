@@ -4,12 +4,6 @@
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - vendor
-    - examples
-    - docs
-  skip-files:
-    - ".*_test\\.go$"
   modules-download-mode: readonly
 
 linters:
@@ -123,13 +117,18 @@ issues:
   
   exclude-rules:
     # Exclude some linters from running on tests files
-    - path: _test\\.go
+    - path: _test\.go
       linters:
         - gocyclo
         - errcheck
         - dupl
         - gosec
         - goconst
+    
+    # Exclude specific directories
+    - path: (vendor|examples|docs)/
+      linters:
+        - all
     
     # Ignore long lines in examples
     - path: examples/
@@ -159,8 +158,6 @@ issues:
   fix: false
 
 output:
-  format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
-  uniq-by-line: true
   sort-results: true
