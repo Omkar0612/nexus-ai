@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Voice+%E2%80%A2+Writing+Studio;Multi-agent+%E2%80%A2+Offline+%E2%80%A2+AES-256+Vault" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Voice+%E2%80%A2+Writing+Studio;Multi-agent+%E2%80%A2+Offline+%E2%80%A2+AES-256+Vault;Auto-Forge+WASM+%E2%80%A2+Shadow+Mode+%E2%80%A2+UI-to-API" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -96,48 +96,19 @@ The WebUI uses an ultra-lightweight `//go:embed` architecture with zero JS frame
 
 ---
 
-## 🎨 v1.7 Creative Studio
-
-> *Replace Midjourney, ElevenLabs, Grammarly, Suno, and ChatGPT — for free.*
-
-### 🖼️ Image Generation
-```bash
-# 1. Local Stable Diffusion (Automatic1111) — fully free, fully private
-nexus imagine "minimalist logo, purple gradient, tech startup"
-
-# 2. Together AI FLUX.1-schnell — free $25 credits
-nexus imagine --backend together --width 1024 --height 768 \
-  "Dubai Marina at golden hour, photorealistic, 8K"
-```
-
-### 🔊 Voice Synthesis
-```bash
-# Coqui TTS — 100% local, no API key required
-nexus speak --backend coqui "System architecture is stable."
-
-# System TTS — always works, zero setup (macOS/Windows native)
-nexus speak "Reminder: standup in 5 minutes"
-```
-
-### ✍️ Writing Studio
-```bash
-# Full writing pipeline — draft → proofread → translate
-nexus write draft --topic "Why AI agents beat SaaS tools" \
-  --style persuasive --words 800 --out article.md
-
-nexus write proofread --file article.md
-```
-
-### 📅 Calendar Agent
-```bash
-nexus calendar today
-nexus calendar conflicts --week
-nexus calendar free --duration 1h
-```
-
----
-
 ## ✨ Features that fix the broken agent ecosystem
+
+### ⚡ Auto-Forge (Hot-Loaded WASM Agents)
+> *Natural language agent creation without Docker restarts.*
+Tell NEXUS to create a new agent (e.g. "Create a Dubai Real Estate scraper"). NEXUS autonomously writes the Go code, compiles it to WebAssembly via the NEXUS Cloud Compiler, and hot-loads it into the running sandbox in milliseconds. Zero restarts. Zero dependencies.
+
+### 👁️ UI-to-API Reverse Engineering
+> *If an app has a UI, NEXUS can build an API for it.*
+Point NEXUS to an undocumented web app or legacy ERP. It launches a headless browser, logs in, intercepts the network traffic (HAR), extracts the Bearer tokens to your AES-256 Vault, and automatically synthesizes a native Wasm tool integration.
+
+### 🕵️‍♂️ "Shadow Mode" Self-Evolution
+> *Safe, measurable self-improvement without hallucinations.*
+NEXUS continuously tests faster models and optimized prompts in a hidden background "Shadow Swarm". If it finds a way to perform a task 40% cheaper or faster without degrading quality, it pings your Human-in-the-Loop gate: *"I found a way to save API costs. Approve upgrade? [Y/N]"*.
 
 ### 🔍 Drift Detector
 > *The only AI agent that notices when your work is stalling.*
@@ -181,15 +152,16 @@ nexus calendar free --duration 1h
 
 ## ⚔️ NEXUS vs The World
 
-| Capability | NEXUS | AutoGPT | CrewAI | n8n AI | LangChain |
+| Capability | NEXUS | AutoAgent | AutoGPT | CrewAI | LangChain |
 |:---|:---:|:---:|:---:|:---:|:---:|
+| **Zero-Code Agent Generation**| ✅ (Hot WASM) | ✅ (Docker) | ❌ | ❌ | ❌ |
+| **Reverse Engineer UI to API**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Self-healing failures** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Drift detection** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Risk gate (HITL)** | ✅ | ⚠️ | ⚠️ | ⚠️ | ❌ |
-| **100% Offline mode** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Shadow Mode Evolution** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Risk gate (HITL)** | ✅ | ❌ | ⚠️ | ⚠️ | ❌ |
+| **100% Offline mode** | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **AES-256 Vault** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Single binary, Go** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **100% free to run** | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 
 ---
 
