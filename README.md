@@ -163,7 +163,7 @@ nexus calendar free --duration 1h
 
 ### 🧠 Deep Memory
 - **Episodic** — SQLite conversation history
-- **Semantic** — TF-IDF cosine similarity search (zero external dependencies)
+- **Semantic** — SQLite Vector Search with Ollama Embeddings (fully local)
 - **Vault** — AES-256-GCM encrypted local secrets
 
 ---
