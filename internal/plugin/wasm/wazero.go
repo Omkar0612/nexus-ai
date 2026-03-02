@@ -24,6 +24,11 @@ type AgentModule struct {
 	stdout io.Writer
 }
 
+// Name returns the identifier of the hot-loaded agent.
+func (a *AgentModule) Name() string {
+	return a.name
+}
+
 // NewRuntime initializes the zero-dependency Wasm runtime.
 func NewRuntime(ctx context.Context) *Runtime {
 	r := wazero.NewRuntime(ctx)
@@ -63,7 +68,7 @@ func (r *Runtime) LoadAgent(name string, wasmBytes []byte, stdout io.Writer) (*A
 
 	mod, err := r.runtime.InstantiateWithConfig(r.ctx, wasmBytes, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to instantiate wasm agent %s: %w", name, err)
+		return nil, fmt.Errorf("failed to instantiate wasm agent %s: %w", err)
 	}
 
 	return &AgentModule{
