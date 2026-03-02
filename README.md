@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+UI-to-API;Hive-Mind+Mesh+%E2%80%A2+Neuro-Fuzzing;NL-to-n8n+DAG+Compiler" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+UI-to-API;Hive-Mind+Mesh+%E2%80%A2+Neuro-Fuzzing;NL-to-n8n+DAG+%E2%80%A2+Token+Stock+Market" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -98,6 +98,10 @@ The WebUI uses an ultra-lightweight `//go:embed` architecture with zero JS frame
 
 ## ✨ Features that fix the broken agent ecosystem
 
+### 📈 Token Stock Market (Dynamic Cost Arbitrage)
+> *Never overpay for an API call again.*
+When a task hits the Multi-Agent Bus, NEXUS pings the `/pricing` and `/health` endpoints of Groq, OpenRouter, Gemini, and your local Ollama instance. It uses an arbitrage formula `(Cost * 100) + (Latency * 10)` to instantly route the payload to the cheapest, fastest model available at that exact millisecond. If Groq hits a 429 Rate Limit, the market instantly evades it and falls back to Gemini.
+
 ### 🔄 Natural Language to n8n DAG Compiler
 > *Stop dragging and dropping. Speak your automations into existence.*
 Tell NEXUS: *"Check my FirstBit ERP daily, and if revenue drops, ping a Meta Ads agent."* NEXUS natively compiles this logic into a valid n8n Directed Acyclic Graph (DAG) JSON, spaces the nodes out perfectly, maps the connections, and deploys it directly to your running n8n instance via API. 
@@ -133,14 +137,6 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 🟡 [MEDIUM] Follow-up missed — 'ping client about invoice' (3 days)
 ```
 
-### 🏥 Self-Healing Engine
-> *Fails once. Never twice.*
-```text
-⚠️  Task 'daily-briefing' failed — Groq rate limit
-    Switching to Gemini 2.0 Flash... Retrying in 30s...
-✅  Task recovered. Cost: $0.00
-```
-
 ### 🧠 Deep Memory
 - **Episodic** — SQLite conversation history
 - **Semantic** — SQLite Vector Search with Ollama Embeddings (fully local)
@@ -163,6 +159,7 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 
 | Capability | NEXUS | AutoAgent | AutoGPT | CrewAI | LangChain |
 |:---|:---:|:---:|:---:|:---:|:---:|
+| **Token Arbitrage Routing**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **NL-to-n8n DAG Compiler** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Agentic Fuzzing (Security)**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **P2P Mesh Computing** | ✅ | ❌ | ❌ | ❌ | ❌ |
