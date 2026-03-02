@@ -1,15 +1,49 @@
 project_name: nexus
 builds:
-  - main: ./cmd/nexus
+  - id: linux-amd64
+    main: ./cmd/nexus
     binary: nexus
     env: [CGO_ENABLED=1]
-    goos: [linux, darwin, windows]
-    goarch: [amd64, arm64]
+    goos: [linux]
+    goarch: [amd64]
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
+
+  - id: linux-arm64
+    main: ./cmd/nexus
+    binary: nexus
+    env: 
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+    goos: [linux]
+    goarch: [arm64]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: windows-amd64
+    main: ./cmd/nexus
+    binary: nexus
+    env: 
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+    goos: [windows]
+    goarch: [amd64]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  # Note: macOS CGO cross-compilation from Linux is notoriously difficult.
+  # We omit macOS (darwin) here to avoid complex zig/osxcross dependencies in the simple GitHub Action.
+  # Users on Mac can still use `go install` or Docker.
+
 archives:
   - format: tar.gz
     format_overrides:
