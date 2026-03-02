@@ -1,207 +1,318 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=venom&color=gradient&customColorList=6,11,20&height=280&section=header&text=NEXUS%20AI&fontSize=90&fontColor=fff&animation=fadeIn&fontAlignY=45&desc=The%20AI%20agent%20that%20actually%20works.%20Free%20forever.&descAlignY=65&descSize=18" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=200&section=header&text=NEXUS&fontSize=80&fontColor=fff&animation=fadeIn" width="100%"/>
 
-<br/>
+### The Autonomous AI Agent Built for Production
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Observability+%E2%80%A2+100%25+Free;Kill-Switch+%E2%80%A2+Circuit+Breakers+%E2%80%A2+Rollback;Auto-Forge+WASM+%E2%80%A2+UI-to-API;Hive-Mind+Mesh+%E2%80%A2+Liquid+Context;NL-to-n8n+DAG+%E2%80%A2+Token+Market" alt="Typing SVG" />
+[![Go 1.22+](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://go.dev)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-<br/><br/>
+**95% of AI agent pilots fail after the demo.** <br>
+NEXUS is engineered for the 5% that ship to production.
 
-[![CI](https://github.com/Omkar0612/nexus-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Omkar0612/nexus-ai/actions/workflows/ci.yml)
-[![Stars](https://img.shields.io/github/stars/Omkar0612/nexus-ai?style=for-the-badge&logo=github&color=FFD700&labelColor=1a1a2e)](https://github.com/Omkar0612/nexus-ai/stargazers)
-[![Forks](https://img.shields.io/github/forks/Omkar0612/nexus-ai?style=for-the-badge&logo=github&color=4ade80&labelColor=1a1a2e)](https://github.com/Omkar0612/nexus-ai/network/members)
-[![Go 1.22](https://img.shields.io/badge/Go-1.22-00ADD8?style=for-the-badge&logo=go&logoColor=white&labelColor=1a1a2e)](https://go.dev)
-[![MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge&labelColor=1a1a2e)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-7c3aed?style=for-the-badge&labelColor=1a1a2e)](CONTRIBUTING.md)
-[![100% Free](https://img.shields.io/badge/Cost-Zero-f59e0b?style=for-the-badge&logo=opensourceinitiative&labelColor=1a1a2e)](https://github.com/Omkar0612/nexus-ai)
-
-<br/>
-
-> **95% of AI agent pilots fail after the demo. NEXUS is built for the 5% that survive production.**
-
-<br/>
-
-[🚀 Quick Start](#-quick-start) · [🤯 What can it actually do?](#-mind-blowing-real-world-examples) · [✨ Features](#-features) · [📋 Changelog](#-changelog)
+[Quick Start](#-quick-start) • [Architecture](#-architecture) • [Production Features](#-production-grade-features) • [Roadmap](ROADMAP.md)
 
 </div>
 
 ---
 
-## 🤯 Mind-Blowing Real-World Examples
+## 🎯 What Makes NEXUS Different
 
-Most AI frameworks show you how to build a "weather bot". Here is what NEXUS does in production right now:
+Most AI agent frameworks are research toys. NEXUS is production infrastructure:
 
-#### 1. The Zero-API Legacy Hack
-> **You:** "Scrape my company's 15-year-old internal accounting software for unpaid invoices. There is no API." <br>
-> **NEXUS:** Launches a hidden headless browser, logs in using your Vault credentials, intercepts the raw network traffic (HAR), discovers the undocumented internal GraphQL endpoint, writes a custom Go plugin wrapping the endpoint, compiles it to WebAssembly via Auto-Forge, hot-loads it into its own brain in 200ms, and hands you a CSV of unpaid invoices.
-
-#### 2. The Multi-Device Hive Mind
-> **You (on your iPhone at a coffee shop):** "Generate a 4K photorealistic image of a cyberpunk city." <br>
-> **NEXUS:** Your phone realizes it doesn't have a GPU. It uses mDNS to detect your RTX 4090 desktop PC sitting asleep at home. It routes the Stable Diffusion prompt over your mesh network to the PC, generates the image using your home electricity, and streams the finished 4K `.png` back to your iPhone screen. **Cost: $0.00**.
-
-#### 3. The "Speak it into existence" Automation
-> **You:** "Whenever an email arrives from a VIP client that sounds angry, draft an apology and page me on Telegram." <br>
-> **NEXUS:** Doesn't just write a python script. It natively writes a 10-node Directed Acyclic Graph (DAG) JSON file and pushes it directly via API to your self-hosted **n8n** instance. It wires up the Webhook, the LLM sentiment node, and the Telegram node perfectly spaced out. You never even opened the n8n GUI.
-
-#### 4. Zero-Latency Pre-Computation
-> **You:** *Wake up and open the NEXUS Web UI.* <br>
-> **NEXUS:** "Good morning. I noticed a GitHub webhook fired at 3 AM indicating a broken CI/CD build on your main repo. While you were sleeping, I pulled the stack trace, wrote the patch, fuzzed it for security flaws, and staged it. Click [Here] to merge." 
-
-#### 5. The Agent that Saved Itself from a $4,000 Loop
-> **What Happened:** NEXUS's web scraper hit an infinite retry loop at 2 AM. <br>
-> **What NEXUS Did:** Detected the hallucination pattern (same tool called 3x consecutively), instantly triggered the **Kill-Switch**, revoked API credentials, rolled back the last 12 actions transactionally, logged a post-mortem, and paged you on Slack. **Damage prevented: $4,200 in API costs.**
+- **Observability First** - Complete execution traces, not JSON dumps in Slack
+- **Kill Switches** - 3-layer emergency stop with transactional rollback
+- **Cost Control** - Real-time token market routing + hallucination loop detection
+- **Zero-Trust Security** - Agentic fuzzing + WebAssembly sandboxing
+- **Actually Free** - No $200/month "Pro" tier. Works with Ollama, Groq, Gemini.
 
 ---
 
 ## 🚀 Quick Start
 
-You can run NEXUS AI without writing a single line of code. Choose your preferred method below:
-
-### Option 1: Docker (Fastest, zero setup)
-Run the pre-compiled Web UI instantly:
+### Option 1: Docker (Recommended)
 ```bash
-docker run -p 7070:7070 ghcr.io/omkar0612/nexus-ai:latest
+docker run -p 7070:7070 \
+  -e NEXUS_LLM_PROVIDER=ollama \
+  -e NEXUS_LLM_BASE_URL=http://host.docker.internal:11434/v1 \
+  ghcr.io/omkar0612/nexus-ai:latest
 ```
-*Then open `http://localhost:7070` in your browser.*
+Then open http://localhost:7070
 
-### Option 2: Download Binaries (Windows / Linux)
-1. Go to the [Releases Page](https://github.com/Omkar0612/nexus-ai/releases/latest)
-2. Download the `.exe` (Windows) or binary (Linux) for your architecture.
-3. Run `nexus start` from your terminal.
-
-### Option 3: Compile from Source (macOS & Developers)
-*Note: Due to SQLite's CGO requirements, Mac users must have Xcode Command Line Tools installed (`xcode-select --install`).*
+### Option 2: Binary Release
 ```bash
-# 1. Clone & build
+# Download from https://github.com/Omkar0612/nexus-ai/releases
+wget https://github.com/Omkar0612/nexus-ai/releases/latest/download/nexus-linux-amd64
+chmod +x nexus-linux-amd64
+./nexus-linux-amd64 start
+```
+
+### Option 3: Build from Source
+```bash
 git clone https://github.com/Omkar0612/nexus-ai
 cd nexus-ai
-CGO_ENABLED=1 go install ./cmd/nexus
-
-# 2. Add your free API key (console.groq.com — 60 sec signup)
-cp config/nexus.example.toml ~/.nexus/nexus.toml
-
-# 3. Run — Web UI starts at http://localhost:7070
-nexus start
+CGO_ENABLED=1 go build -o nexus ./cmd/nexus
+./nexus start
 ```
 
-> 🆓 **No paid API needed.** Works natively with Groq (free), Gemini (free), Ollama (100% offline), and OpenRouter.
+> **Note:** SQLite requires CGO. macOS users need Xcode Command Line Tools (`xcode-select --install`).
 
-<details>
-<summary><b>🌐 CLI & Web UI flags &rarr;</b></summary>
+---
 
-```bash
-nexus start                        # Web UI at :7070 (default)
-nexus start --webui-addr :8080     # Custom port
-nexus start --no-webui             # CLI only
-nexus start --debug                # Verbose logging
+## 🏗️ Architecture
+
+NEXUS is a modular agent runtime with hot-swappable components:
+
 ```
-</details>
+┌─────────────────────────────────────────────────────────┐
+│                    CLI / Web UI                         │
+├─────────────────────────────────────────────────────────┤
+│  Router (LLM Orchestration + Intent Classification)     │
+├──────────┬──────────────────────────────────┬───────────┤
+│ Observe  │  Kill Switch  │  Circuit Breaker │  Routing  │
+│ (Traces) │  (3-Layer)    │  (Per-Tool)      │  (Market) │
+├──────────┴──────────────────────────────────┴───────────┤
+│                    Agent Registry                        │
+│  • calendar  • email  • github  • imagegen  • n8n       │
+│  • browser   • voice  • vision  • writing   • music     │
+├─────────────────────────────────────────────────────────┤
+│            Plugin Layer (WASM + Native)                  │
+│  • Auto-Forge (Hot compilation)                          │
+│  • Fuzzer (Security testing)                             │
+│  • UI-to-API (Reverse engineering)                       │
+├─────────────────────────────────────────────────────────┤
+│         Infrastructure                                   │
+│  • Vault (AES-256 credentials)                           │
+│  • Memory (SQLite Vector DB + Liquid Context)            │
+│  • Mesh (P2P mDNS discovery)                             │
+│  • Scheduler (Cron + Predictive)                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Core Design Principles:**
+1. **Fail-Safe by Default** - Every agent action is logged, traced, and rollback-capable
+2. **Zero-Trust Execution** - Auto-generated code runs in WASM sandbox with fuzzing
+3. **Cost-Aware** - Token market routes to cheapest provider in real-time
+4. **Human-in-the-Loop** - Irreversible actions (delete, transfer) require approval
 
 ---
 
-## ✨ Features that fix the broken agent ecosystem
+## 🛡️ Production-Grade Features
 
-### 🔍 Production-Grade Observability
-> *The #1 reason agent pilots fail: teams can't debug them in production.*
-NEXUS gives you a complete execution timeline for every agent run. See every tool call, every retry, every token spent, and every hallucination loop before it costs you $4,000. Engineers, PMs, and domain experts can all inspect traces in plain English. No more JSON dumps and Slack logs.
+### 1. Observability Stack (`internal/observe`)
+**The #1 reason agents fail: teams can't debug them in production.**
 
-### 🛑 3-Layer Kill-Switch Architecture
-> *What happens when your agent goes rogue at 3 AM?*
-- **Layer 1 (Hard Stop):** Instant credential revocation + queue drain.
-- **Layer 2 (Soft Pause):** Freeze execution, preserve state for human review.
-- **Layer 3 (Transactional Rollback):** Undo the last N agent actions idempotently.
+```go
+// Every agent execution gets a structured trace
+trace := tracer.StartTrace(ctx, "research_agent", traceID)
+trace.RecordStep(TraceStep{
+    Action:     "tool_call",
+    ToolName:   "web_search",
+    ToolArgs:   map[string]interface{}{"q": "NEXUS AI"},
+    ToolOutput: "Found 1,200 results",
+    LatencyMs:  340,
+    Success:    true,
+})
+trace.EndTrace(StatusSuccess, tokens, costUSD)
+```
 
-Auto-triggers on: cost threshold breach, hallucination loop detection, or 3 consecutive tool failures.
+**What you get:**
+- Timeline reconstruction of every agent decision
+- Per-tool latency, retry count, and failure reason
+- Hallucination loop detection (same tool called 3x)
+- Token/cost tracking with budget alerts
+- Cross-functional dashboards (engineers, PMs, domain experts)
 
-### 🔌 Circuit Breakers for External APIs
-> *When Stripe's API goes down, your agent shouldn't loop 500 times.*
-NEXUS automatically degrades to read-only mode when external integrations flake. Exponential backoff with jitter. Human-in-the-Loop escalation for irreversible actions (like deleting a database).
+### 2. Kill-Switch Architecture (`internal/killswitch`)
+**What happens when your agent goes rogue at 3 AM?**
 
-### 💧 Agentic Memory Consolidation (Liquid Context)
-> *NEXUS never forgets, and it never hits a context limit.*
-When your chat history bloats past 8,000 tokens, NEXUS triggers a background "dream state". It reads the raw, bloated history, strips out the conversational filler, and semantically compresses it into high-density "Concepts". A 5,000-token sprawling conversation is mathematically reduced into a 50-token factual block and re-injected into SQLite. Infinite memory, zero amnesia.
+- **Layer 1 (Hard Stop):** Instant credential revocation + queue drain
+- **Layer 2 (Soft Pause):** Freeze execution, preserve state for review
+- **Layer 3 (Rollback):** Undo last N actions transactionally
 
-### 📈 Token Stock Market (Dynamic Cost Arbitrage)
-> *Never overpay for an API call again.*
-When a task hits the Multi-Agent Bus, NEXUS pings the `/pricing` and `/health` endpoints of Groq, OpenRouter, Gemini, and your local Ollama instance. It uses an arbitrage formula `(Cost * 100) + (Latency * 10)` to instantly route the payload to the cheapest, fastest model available at that exact millisecond. If Groq hits a 429 Rate Limit, the market instantly evades it and falls back to Gemini.
+**Auto-triggers:**
+- Cost threshold breach ($50 spent in 1 hour)
+- Hallucination loop detected
+- 3 consecutive tool failures
+- Manual panic button (CLI: `nexus kill <session-id>`)
 
-### 🔄 Natural Language to n8n DAG Compiler
-> *Stop dragging and dropping. Speak your automations into existence.*
-Tell NEXUS: *"Check my company ERP daily, and if revenue drops, ping a Meta Ads agent."* NEXUS natively compiles this logic into a valid n8n Directed Acyclic Graph (DAG) JSON, spaces the nodes out perfectly, maps the connections, and deploys it directly to your running n8n instance via API. 
+**Post-mortem:**
+- Classifies failure type (cost, loop, tool, timeout)
+- Adds trace to regression test suite
+- Updates prompt validators if needed
 
-### 🛡️ Agentic Fuzzing (Neuro-Fuzzing)
-> *An adversarial agent that attacks the code the creator agent just wrote.*
-Before any auto-generated code is deployed to the Event Bus, the internal "Attacker Agent" heavily bombards the WebAssembly module with Null Bytes, SQL Injections, Path Traversals, and 10MB memory-exhaustion payloads. If the generated agent panics or hits an infinite loop (DoS), the deployment is instantly rejected. 
+### 3. Circuit Breakers (`internal/circuit`)
+**When Stripe's API goes down, your agent shouldn't retry 500 times.**
 
-### 🕸️ Hive-Mind Mesh Computing
-> *Turn your devices into a unified AI supercomputer.*
-Run NEXUS on your phone, laptop, and VPS. Using the P2P Mesh Network, they automatically discover each other. If you ask your phone to generate a heavy Stable Diffusion image, the phone's NEXUS dynamically routes the compute payload to your Desktop's GPU over your local network, and returns the result to your phone. 
+```go
+breaker.Call(ctx, "stripe_api", func() error {
+    return stripe.CreatePayment(payload)
+})
+// Circuit OPEN after 3 consecutive fails
+// Auto-retry after 30s (half-open state)
+// Degrades to read-only mode
+```
 
-### 🧠 Predictive Pre-Computation (Zero-Latency AI)
-> *Why wait 3 minutes for Deep Research when NEXUS already did it?*
-AutoAgent and LangChain sit idle until you type a prompt. NEXUS monitors your world. If it sees you have a meeting at 2:00 PM, or you just pushed a broken commit, it spins up the background workers instantly. By the time you open the WebUI, the meeting brief and the code fix are already cached and waiting for you. Zero latency.
+### 4. Token Stock Market (`internal/routing`)
+**Never overpay for an API call.**
 
-### ⚡ Auto-Forge (Hot-Loaded WASM Agents)
-> *Natural language agent creation without Docker restarts.*
-Tell NEXUS to create a new agent (e.g. "Create a Real Estate scraper"). NEXUS autonomously writes the Go code, compiles it to WebAssembly via the NEXUS Cloud Compiler, and hot-loads it into the running sandbox in milliseconds. Zero restarts. Zero dependencies.
+```
+Provider    Model          Cost/1M    Latency    Score
+────────────────────────────────────────────────────
+Ollama      llama3.2       $0.00      120ms      12   ← SELECTED
+Groq        llama-70b      $0.59      80ms       66
+Gemini      2.0-flash      $0.15      150ms      30
+OpenAI      gpt-4o         $2.50      200ms      270
+```
 
-### 👁️ UI-to-API Reverse Engineering
-> *If an app has a UI, NEXUS can build an API for it.*
-Point NEXUS to an undocumented web app or legacy ERP. It launches a headless browser, logs in, intercepts the network traffic (HAR), extracts the Bearer tokens to your AES-256 Vault, and automatically synthesizes a native Wasm tool integration.
+Formula: `(Cost/1M * 100) + (Latency * 0.1)`
 
-### 🕵️‍♂️ "Shadow Mode" Self-Evolution
-> *Safe, measurable self-improvement without hallucinations.*
-NEXUS continuously tests faster models and optimized prompts in a hidden background "Shadow Swarm". If it finds a way to perform a task 40% cheaper or faster without degrading quality, it pings your Human-in-the-Loop gate: *"I found a way to save API costs. Approve upgrade? [Y/N]"*.
+### 5. Agentic Fuzzing (`internal/fuzzer`)
+**An adversarial agent attacks your agent's code before deployment.**
+
+```go
+// Before deploying auto-generated WASM agent
+fuzzer.Test(wasmModule, []Attack{
+    NullByteInjection,
+    SQLInjection,
+    PathTraversal,
+    MemoryExhaustion,  // 10MB payload
+    InfiniteLoop,
+})
+// Deployment rejected if agent panics
+```
+
+### 6. Liquid Context (`internal/memory`)
+**Infinite memory without hitting context limits.**
+
+When chat history exceeds 8,000 tokens:
+1. Background worker grabs old episodes (>24h)
+2. LLM compresses: *"User needs n8n deployment. Prefers Go."*
+3. Deletes bloated raw chat (5,000 tokens)
+4. Stores dense concept (50 tokens)
+
+**Result:** NEXUS never forgets, never amnesias, never hits API limits.
 
 ---
 
-## 🆓 Free LLM Providers Supported
+## 🎨 Agent Capabilities
 
-| Provider | Model | Speed | Cost | Privacy |
-|:---:|:---:|:---:|:---:|:---:|
-| **Ollama** | Any model | Local GPU | **Free** | 🔒 100% Offline |
-| **Groq** | Llama 3.3 70B | ⚡ 300 tok/s | **Free** | Cloud |
-| **Gemini** | 2.0 Flash | ⚡ Fast | **Free** (1M tok/day)| Cloud |
-| **Together**| FLUX / Mixtral | ⚡ Fast | **Free** ($25 creds)| Cloud |
+**Built-In Agents:**
+- `calendar` - Google Calendar integration (conflicts, free slots)
+- `email` - Gmail/Outlook automation
+- `github` - PR reviews, issue tracking, CI/CD monitoring
+- `imagegen` - Stable Diffusion, FLUX, DALL-E
+- `voice` - Text-to-speech (Coqui, ElevenLabs, system TTS)
+- `vision` - OCR, image analysis
+- `writing` - Draft, rewrite, translate, proofread
+- `music` - AudioCraft, MusicGen
+- `browser` - Headless web automation, UI-to-API reverse engineering
+- `n8n` - Natural language to workflow DAG compiler
 
----
-
-## ⚔️ NEXUS vs The World
-
-| Capability | NEXUS | AutoAgent | AutoGPT | CrewAI | LangChain |
-|:---|:---:|:---:|:---:|:---:|:---:|
-| **Production Observability**| ✅ | ❌ | ❌ | ❌ | ⚠️ (paid)|
-| **Kill-Switch + Rollback**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Circuit Breakers**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Hallucination Loop Detection**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Liquid Context (Amnesia fix)**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Token Arbitrage Routing**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **NL-to-n8n DAG Compiler** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Agentic Fuzzing (Security)**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **P2P Mesh Computing** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Zero-Latency (Pre-Compute)**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Zero-Code Agent Gen** | ✅ (Hot WASM) | ✅ (Docker) | ❌ | ❌ | ❌ |
-| **Reverse Engineer UI to API**| ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Shadow Mode Evolution** | ✅ | ❌ | ❌ | ❌ | ❌ |
+**Plugin System:**
+- Hot-load WASM agents at runtime
+- Zero Docker restarts
+- Natural language agent creation: *"Create a Real Estate scraper"*
 
 ---
 
-## 🤝 Built by the Community
+## 🔒 Security Model
 
-Want to build your own custom plugin in 5 lines of Go? 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to learn how to add new skills to the `nexus.Registry`.
+1. **WebAssembly Sandbox** - Auto-generated code runs in WASM with no filesystem/network access
+2. **Agentic Fuzzing** - Every generated agent is attacked before deployment
+3. **AES-256 Vault** - Credentials encrypted at rest
+4. **Human-in-the-Loop** - Irreversible actions require manual approval
+5. **Audit Logs** - Every agent action is logged for compliance
+
+---
+
+## 🆚 NEXUS vs. Alternatives
+
+| Feature | NEXUS | AutoGPT | LangChain | CrewAI |
+|---------|-------|---------|-----------|--------|
+| **Production Observability** | ✅ Full traces | ❌ | ⚠️ Paid | ❌ |
+| **Kill Switch + Rollback** | ✅ 3-layer | ❌ | ❌ | ❌ |
+| **Circuit Breakers** | ✅ | ❌ | ❌ | ❌ |
+| **Hallucination Detection** | ✅ Auto | ❌ | ❌ | ❌ |
+| **Cost Arbitrage** | ✅ Real-time | ❌ | ❌ | ❌ |
+| **WASM Sandbox** | ✅ | ❌ | ❌ | ❌ |
+| **100% Free** | ✅ | ✅ | ⚠️ Freemium | ⚠️ Freemium |
+| **Self-Hosted** | ✅ | ✅ | ✅ | ✅ |
+
+---
+
+## 🗺️ Roadmap
+
+**v2.0 (Current)**
+- ✅ Production observability
+- ✅ Kill-switch architecture
+- ✅ Circuit breakers
+- ✅ Token market routing
+- ✅ Liquid context
+- ✅ WebAssembly sandbox
+
+**v2.1 (Q2 2026)**
+- 🔄 Mesh P2P GPU sharing
+- 🔄 Shadow mode self-evolution
+- 🔄 Predictive pre-computation
+- 🔄 n8n DAG compiler
+
+**v2.2 (Q3 2026)**
+- 📋 Multi-agent orchestration
+- 📋 Distributed tracing (OpenTelemetry)
+- 📋 Desktop app (Wails)
+- 📋 Mobile app (React Native)
+
+See [ROADMAP.md](ROADMAP.md) for full details.
+
+---
+
+## 📚 Documentation
+
+- [Architecture Overview](docs/ARCHITECTURE.md)
+- [Production Checklist](PRODUCTION_CHECKLIST.md)
+- [Plugin Development](docs/PLUGIN_DEVELOPMENT.md)
+- [API Reference](docs/API.md)
+- [Deployment Guide](docs/DEPLOYMENT.md)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- How to add a new agent
+- Code style guide
+- Testing requirements
+- PR process
+
+---
+
+## 🆓 Free LLM Providers
+
+| Provider | Model | Speed | Cost | Setup Time |
+|----------|-------|-------|------|------------|
+| **Ollama** | Any model | Local GPU | Free | 2 min |
+| **Groq** | Llama 3.3 70B | 300 tok/s | Free | 60 sec |
+| **Gemini** | 2.0 Flash | Fast | Free (1M tok/day) | 2 min |
+| **Together** | FLUX / Mixtral | Fast | Free ($25 credits) | 3 min |
+
+---
+
+## 📜 License
+
+MIT © 2026 Omkar Parab
+
+Free forever. No "Pro" tier. No bait-and-switch.
+
+---
 
 <div align="center">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Omkar0612/nexus-ai&type=Date)](https://star-history.com/#Omkar0612/nexus-ai)
+**If NEXUS saved you from a production incident, a ⭐ means a lot.**
 
-<br/>
+Built for the 5% that actually ship to production.
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=16&duration=4000&pause=2000&color=4ADE80&center=true&vCenter=true&width=500&lines=If+NEXUS+saved+you+time+%E2%80%94+a+%E2%AD%90+means+a+lot.;Built+for+the+5%25+that+ship+to+production.;Free+forever.+MIT+licensed." alt="footer typing" />
-
-<br/>
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" width="100%"/>
 
 </div>
