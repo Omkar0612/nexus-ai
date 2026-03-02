@@ -2,70 +2,41 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          go-version: '1.22'
+          check-latest: true
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.22"
-          cache: false
+      - name: Download dependencies
+        run: go mod download
 
-      - name: Install system deps
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y gcc libsqlite3-dev pkg-config
-
-      - name: Tidy and download modules
-        env:
-          GONOSUMCHECK: "*"
-          GONOSUMDB: "*"
-          GOFLAGS: "-mod=mod"
-          GOPATH: /home/runner/go
+      - name: Verify go.mod is tidy
         run: |
           go mod tidy
-          go mod download
-
-      - name: Commit go.sum if changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add go.sum go.mod
-          git diff --cached --quiet || git commit -m "chore: update go.sum [skip ci]"
-          git push origin HEAD:main || true
+          if ! git diff --exit-code; then
+            echo "go.mod/go.sum is not tidy. Run 'go mod tidy' and commit the changes."
+            exit 1
+          fi
 
       - name: Build
-        env:
-          CGO_ENABLED: "1"
-        run: go build -tags ci ./...
+        run: go build -v ./...
 
       - name: Test
-        env:
-          CGO_ENABLED: "1"
-        run: go test -tags ci ./... -timeout 60s
+        run: go test -v ./... -race -coverprofile=coverage.txt -covermode=atomic
 
-  python:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - name: Run gosec (Security Scanner)
+        uses: securego/gosec@master
         with:
-          python-version: "3.12"
-
-      - name: Install Python deps
-        run: pip install httpx aiohttp requests python-dotenv
-
-      - name: Syntax check workers
-        run: python -m py_compile workers/main.py
-
-      - name: Syntax check examples
-        run: python -m py_compile examples/autonomous_business_monitor/main.py
+          args: ./...
