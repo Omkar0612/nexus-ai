@@ -1,6 +1,6 @@
 module github.com/Omkar0612/nexus-ai
 
-go 1.22.0
+go 1.24.0
 
 require (
 	github.com/grandcat/zeroconf v1.0.0
