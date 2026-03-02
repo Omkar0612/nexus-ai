@@ -2,7 +2,7 @@ package balancer
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand" //nolint:gosec // load balancing doesn't require crypto-strength randomness
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -64,7 +64,7 @@ func (lb *LoadBalancer) Pick() (*Node, error) {
 	}
 	switch lb.scheme {
 	case "random":
-		return healthy[rand.Intn(len(healthy))], nil
+		return healthy[rand.Intn(len(healthy))], nil //nolint:gosec // non-security random selection
 	case "round_robin":
 		lb.cursor = (lb.cursor + 1) % len(healthy)
 		return healthy[lb.cursor], nil
@@ -146,7 +146,7 @@ func (lb *LoadBalancer) checkNode(node *Node) {
 		node.Healthy = true
 	}
 	if resp != nil {
-		resp.Body.Close()
+		resp.Body.Close() //nolint:gosec
 	}
 }
 
