@@ -17,7 +17,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 
 # ---- Runtime stage ----
 # alpine:3.19 — minimal attack surface; no python3/pip in runtime image
-FROM alpine:3.19
+FROM alpine:3.23
 
 # Run as non-root user — prevents container privilege escalation
 RUN addgroup -S nexus && adduser -S -G nexus -u 10001 nexus
