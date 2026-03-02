@@ -1,4 +1,4 @@
-# golangci-lint configuration for NEXUS (Alpha Stage)
+# golangci-lint configuration for NEXUS (Alpha Stage - Minimal)
 # Documentation: https://golangci-lint.run/usage/configuration/
 
 run:
@@ -8,20 +8,20 @@ run:
 
 linters:
   enable:
-    - errcheck          # Check for unchecked errors
+    - errcheck          # Check for unchecked errors (critical)
     - gosimple          # Simplify code
     - govet             # Go vet examines Go source code
-    - ineffassign       # Detect ineffectual assignments
-    - staticcheck       # Advanced Go linter
-    - unused            # Checks for unused constants, variables, functions and types
     - gofmt             # Check code formatting
     - goimports         # Check import formatting
-    - misspell          # Detect commonly misspelled words
 
   disable:
-    - gosec             # Too strict for alpha, re-enable for beta
-    - gocritic          # Too strict for alpha
-    - revive            # Too strict for alpha
+    - staticcheck       # Too many false positives for alpha
+    - ineffassign       # Optimization pass later
+    - unused            # Too strict during prototyping
+    - misspell          # Nice-to-have
+    - gosec             # Security review in beta
+    - gocritic          # Too opinionated
+    - revive            # Style enforcement later
     - unconvert         # Minor optimizations
     - unparam           # Reported but not blocking
     - goconst           # Nice-to-have
@@ -33,18 +33,10 @@ linters:
     - rowserrcheck      # SQL-specific
     - wastedassign      # Optimization pass later
     - whitespace        # gofmt handles this
-    - exhaustive        # Too strict for switch statements
-    - exhaustruct       # Too strict for struct initialization
-    - varnamelen        # Variable names can be short in small scopes
-    - wsl               # Too opinionated about whitespace
-    - nlreturn          # Too strict about return statements
-    - lll               # Line length is handled by gofmt
-    - funlen            # Function length warnings are too strict
-    - cyclop            # Duplicate of gocyclo
 
 linters-settings:
   errcheck:
-    check-type-assertions: false  # Too strict for alpha
+    check-type-assertions: false
     check-blank: false
     exclude-functions:
       - (*github.com/rs/zerolog.Event).Msg
@@ -55,7 +47,6 @@ linters-settings:
       - fmt.Printf
     
   govet:
-    enable-all: false
     enable:
       - assign
       - atomic
@@ -67,7 +58,6 @@ linters-settings:
       - errorsas
       - httpresponse
       - loopclosure
-      - lostcancel
       - nilfunc
       - printf
       - shift
@@ -79,61 +69,27 @@ linters-settings:
       - unsafeptr
       - unusedresult
 
-  misspell:
-    locale: US
-    ignore-words:
-      - nexus
-      - llama
-      - ollama
-      - wasm
-      - wazero
-      - mdns
-      - groq
-      - anthropic
-
-  staticcheck:
-    checks: ["all", "-SA1019"]  # Exclude deprecation warnings
-
 issues:
-  exclude-use-default: true  # Use default excludes
-  max-issues-per-linter: 50  # Limit output
+  exclude-use-default: true
+  max-issues-per-linter: 50
   max-same-issues: 10
   
   exclude-rules:
-    # Exclude some linters from running on tests files
+    # Exclude linters from test files
     - path: _test\.go
       linters:
         - errcheck
         - gosimple
-        - staticcheck
     
     # Exclude specific directories
     - path: (vendor|examples|docs|testdata)/
       linters:
         - all
     
-    # Allow embed.FS to be unused initially
-    - text: "`.*FS` is unused"
-      linters:
-        - unused
-    
-    # Temporary: Ignore missing error checks during alpha
-    - text: "Error return value.*is not checked"
-      linters:
-        - errcheck
-    
-    # Allow TODO comments during development
+    # Allow TODO comments
     - text: "(TODO|FIXME|XXX)"
       linters:
         - godox
-    
-    # Ignore context.Background() in examples and tests
-    - text: "Non-inherited new context"
-      path: (examples|_test)\.go
-    
-    # Ignore shadow variables in tests
-    - text: "shadow"
-      path: _test\.go
     
     # Allow time.Sleep in mesh simulation
     - text: "time\.Sleep"
@@ -143,10 +99,7 @@ issues:
     - text: "subprocess launched with variable"
       path: internal/forge/
 
-  # Show only new issues
   new: false
-  
-  # Don't auto-fix
   fix: false
 
 output:

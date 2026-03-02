@@ -11,6 +11,8 @@ type mockClient struct {
 }
 
 func (m *mockClient) Dispatch(ctx context.Context, targetAddress string, req *TaskRequest) (*TaskResponse, error) {
+	// FIXED: Actually set dispatchedTo so test can verify routing
+	m.dispatchedTo = targetAddress
 	return &TaskResponse{Result: []byte("remote success")}, nil
 }
 
