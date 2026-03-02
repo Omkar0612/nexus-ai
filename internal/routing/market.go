@@ -68,7 +68,7 @@ func (m *Market) refreshQuotes(ctx context.Context) {
 		wg.Add(1)
 		go func(s QuoteSource) {
 			defer wg.Done()
-			
+
 			// Set a strict timeout so a lagging provider doesn't stall the market
 			pollCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
@@ -83,7 +83,7 @@ func (m *Market) refreshQuotes(ctx context.Context) {
 			m.mu.Lock()
 			m.quotes[s.Name()] = quote
 			m.mu.Unlock()
-			
+
 			log.Debug().
 				Str("provider", string(quote.Provider)).
 				Str("model", quote.Model).

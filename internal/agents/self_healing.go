@@ -31,12 +31,12 @@ type FailureRecord struct {
 
 // HealingResult is the outcome of a healing attempt
 type HealingResult struct {
-	Status      string  // fixed, retrying, escalated, diagnosed
-	RootCause   string
-	FixApplied  string
-	Message     string
-	UserAction  string
-	Confidence  float64
+	Status     string // fixed, retrying, escalated, diagnosed
+	RootCause  string
+	FixApplied string
+	Message    string
+	UserAction string
+	Confidence float64
 }
 
 // SelfHealingAgent manages task failure recovery

@@ -89,9 +89,15 @@ func New(opts ...Option) *Agent {
 
 // Generate creates an image from the request.
 func (a *Agent) Generate(ctx context.Context, req Request) (*Result, error) {
-	if req.Width == 0 { req.Width = 512 }
-	if req.Height == 0 { req.Height = 512 }
-	if req.Steps == 0 { req.Steps = 20 }
+	if req.Width == 0 {
+		req.Width = 512
+	}
+	if req.Height == 0 {
+		req.Height = 512
+	}
+	if req.Steps == 0 {
+		req.Steps = 20
+	}
 	if req.OutputPath == "" {
 		req.OutputPath = filepath.Join(os.TempDir(),
 			fmt.Sprintf("nexus-img-%d.png", time.Now().UnixNano()))

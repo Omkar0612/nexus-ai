@@ -45,13 +45,13 @@ type DigestFeed func() []FeedItem
 
 // DigestReport is the complete morning briefing
 type DigestReport struct {
-	Date        time.Time
-	UserName    string
+	Date         time.Time
+	UserName     string
 	HighPriority []FeedItem
 	MedPriority  []FeedItem
 	LowPriority  []FeedItem
-	TotalItems  int
-	GeneratedAt time.Time
+	TotalItems   int
+	GeneratedAt  time.Time
 }
 
 // DigestBuilder assembles the daily briefing from all registered feeds
@@ -156,9 +156,15 @@ func (r *DigestReport) ToJSON() ([]byte, error) {
 
 func (r *DigestReport) activeLevels() int {
 	n := 0
-	if len(r.HighPriority) > 0 { n++ }
-	if len(r.MedPriority) > 0 { n++ }
-	if len(r.LowPriority) > 0 { n++ }
+	if len(r.HighPriority) > 0 {
+		n++
+	}
+	if len(r.MedPriority) > 0 {
+		n++
+	}
+	if len(r.LowPriority) > 0 {
+		n++
+	}
 	return n
 }
 

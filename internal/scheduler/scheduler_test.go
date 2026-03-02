@@ -9,11 +9,11 @@ import (
 func TestSchedulerRegisterAndList(t *testing.T) {
 	s := New(time.Second)
 	err := s.Register(&Job{
-		ID:      "test-job",
-		Name:    "Test Job",
-		Trigger: TriggerInterval,
+		ID:       "test-job",
+		Name:     "Test Job",
+		Trigger:  TriggerInterval,
 		Interval: time.Minute,
-		Handler: func(ctx context.Context) error { return nil },
+		Handler:  func(ctx context.Context) error { return nil },
 	})
 	if err != nil {
 		t.Fatalf("Register: %v", err)
@@ -52,7 +52,7 @@ func TestSchedulerConditionSkip(t *testing.T) {
 	ran := false
 	_ = s.Register(&Job{
 		ID: "cond-job", Name: "Conditional",
-		Trigger: TriggerInterval,
+		Trigger:  TriggerInterval,
 		Interval: 50 * time.Millisecond,
 		Conditions: []Condition{
 			func(ctx context.Context) (bool, string) {

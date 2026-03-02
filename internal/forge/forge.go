@@ -26,7 +26,7 @@ func New(wasmRuntime *wasm.Runtime) *Forge {
 	}
 }
 
-// BuildAndLoad handles the entire lifecycle: compiling source to WASM, 
+// BuildAndLoad handles the entire lifecycle: compiling source to WASM,
 // hot-loading it, and returning the active sandboxed AgentModule.
 func (f *Forge) BuildAndLoad(ctx context.Context, name, sourceCode string, stdout io.Writer) (*wasm.AgentModule, error) {
 	log.Info().Str("agent", name).Msg("Forging new agent from source...")
@@ -38,7 +38,7 @@ func (f *Forge) BuildAndLoad(ctx context.Context, name, sourceCode string, stdou
 	wasmBytes, err = f.localCompiler.Compile(ctx, sourceCode)
 	if err != nil {
 		log.Warn().Err(err).Msg("Local TinyGo compilation failed or unavailable. Falling back to NEXUS Cloud Compiler...")
-		
+
 		// 2. Fallback to Cloud Compiler (no dependencies required for user)
 		wasmBytes, err = f.cloudCompiler.Compile(ctx, sourceCode)
 		if err != nil {

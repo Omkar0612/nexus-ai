@@ -44,7 +44,7 @@ func TestMarket_GetBestQuote_OllamaPreferred(t *testing.T) {
 
 	market.RegisterSource(groq)
 	market.RegisterSource(ollama)
-	
+
 	// Manually force refresh for test
 	market.refreshQuotes(context.Background())
 

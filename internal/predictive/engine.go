@@ -73,7 +73,7 @@ func (e *Engine) pollAndCompute(ctx context.Context) {
 		for _, ev := range events {
 			// In a real system, check if ev.ID is already in Cache to avoid duplicate work
 			log.Info().Str("event_type", string(ev.Type)).Msg("Predictive Engine triggered. Beginning background computation...")
-			
+
 			// Kick off heavy LLM work in a background goroutine
 			go e.computeTask(context.Background(), ev)
 		}

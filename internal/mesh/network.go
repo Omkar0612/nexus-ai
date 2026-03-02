@@ -11,10 +11,10 @@ import (
 
 // Network manages peer discovery and intelligent task routing across the local network.
 type Network struct {
-	mu         sync.RWMutex
-	localNode  *Node
-	peers      map[string]*Node
-	client     NodeClient
+	mu        sync.RWMutex
+	localNode *Node
+	peers     map[string]*Node
+	client    NodeClient
 }
 
 // NodeClient handles HTTP communication between peers

@@ -19,8 +19,8 @@ func TestNewPredictiveEngine(t *testing.T) {
 		{
 			name: "invalid confidence - negative",
 			config: &Config{
-				ConfidenceThreshold: -0.1,
-				HistorySize:         100,
+				ConfidenceThreshold:  -0.1,
+				HistorySize:          100,
 				MinPatternOccurrence: 3,
 			},
 			wantErr: true,
@@ -28,8 +28,8 @@ func TestNewPredictiveEngine(t *testing.T) {
 		{
 			name: "invalid confidence - too high",
 			config: &Config{
-				ConfidenceThreshold: 1.5,
-				HistorySize:         100,
+				ConfidenceThreshold:  1.5,
+				HistorySize:          100,
 				MinPatternOccurrence: 3,
 			},
 			wantErr: true,
@@ -37,8 +37,8 @@ func TestNewPredictiveEngine(t *testing.T) {
 		{
 			name: "invalid history size",
 			config: &Config{
-				ConfidenceThreshold: 0.7,
-				HistorySize:         5,
+				ConfidenceThreshold:  0.7,
+				HistorySize:          5,
 				MinPatternOccurrence: 3,
 			},
 			wantErr: true,
@@ -46,8 +46,8 @@ func TestNewPredictiveEngine(t *testing.T) {
 		{
 			name: "invalid min occurrence",
 			config: &Config{
-				ConfidenceThreshold: 0.7,
-				HistorySize:         100,
+				ConfidenceThreshold:  0.7,
+				HistorySize:          100,
 				MinPatternOccurrence: 1,
 			},
 			wantErr: true,

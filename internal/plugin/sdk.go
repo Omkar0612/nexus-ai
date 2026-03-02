@@ -39,6 +39,6 @@ func NewSkill(name, description string, fn func(Input) Output) Plugin {
 	return &SkillFunc{name: name, desc: description, fn: fn}
 }
 
-func (s *SkillFunc) Name() string        { return s.name }
-func (s *SkillFunc) Description() string { return s.desc }
+func (s *SkillFunc) Name() string            { return s.name }
+func (s *SkillFunc) Description() string     { return s.desc }
 func (s *SkillFunc) Execute(in Input) Output { return s.fn(in) }

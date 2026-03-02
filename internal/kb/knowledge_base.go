@@ -65,10 +65,10 @@ type KnowledgeBase struct {
 	mu        sync.RWMutex
 	docs      map[string]*Document
 	dir       string
-	chunkSize int    // chars per chunk
-	overlap   int    // char overlap between chunks
+	chunkSize int // chars per chunk
+	overlap   int // char overlap between chunks
 	idf       map[string]float64
-	dirty     bool   // idf needs rebuild
+	dirty     bool // idf needs rebuild
 }
 
 // New creates or opens a KnowledgeBase rooted at dir

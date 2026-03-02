@@ -32,8 +32,12 @@ func TestNoteAutoTag(t *testing.T) {
 	hasClient := false
 	hasMeeting := false
 	for _, tag := range note.Tags {
-		if tag == "client" { hasClient = true }
-		if tag == "meeting" { hasMeeting = true }
+		if tag == "client" {
+			hasClient = true
+		}
+		if tag == "meeting" {
+			hasMeeting = true
+		}
 	}
 	if !hasClient || !hasMeeting {
 		t.Errorf("expected client+meeting tags, got: %v", note.Tags)

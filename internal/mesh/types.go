@@ -6,10 +6,10 @@ import (
 
 // HardwareProfile describes the compute capabilities of a NEXUS node.
 type HardwareProfile struct {
-	HasGPU       bool    `json:"has_gpu"`
-	TotalRAM     uint64  `json:"total_ram"`
-	CPUModel     string  `json:"cpu_model"`
-	LoadAverage  float64 `json:"load_average"`
+	HasGPU      bool    `json:"has_gpu"`
+	TotalRAM    uint64  `json:"total_ram"`
+	CPUModel    string  `json:"cpu_model"`
+	LoadAverage float64 `json:"load_average"`
 }
 
 // Node represents a single instance of NEXUS running on a device (Phone, PC, VPS).

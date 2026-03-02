@@ -14,54 +14,54 @@ type ExecutionMode int
 
 const (
 	ModePassive ExecutionMode = iota // Observe only, no side effects
-	ModeActive                        // Full execution with rollback capability
-	ModeABTest                        // Split traffic between strategies
+	ModeActive                       // Full execution with rollback capability
+	ModeABTest                       // Split traffic between strategies
 )
 
 // Strategy represents an agent execution strategy
 type Strategy struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Version     string                 `json:"version"`
-	Config      map[string]any         `json:"config"`
-	Enabled     bool                   `json:"enabled"`
-	SuccessRate float64                `json:"success_rate"`
-	AvgLatency  time.Duration          `json:"avg_latency"`
-	Executions  int                    `json:"executions"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Version     string         `json:"version"`
+	Config      map[string]any `json:"config"`
+	Enabled     bool           `json:"enabled"`
+	SuccessRate float64        `json:"success_rate"`
+	AvgLatency  time.Duration  `json:"avg_latency"`
+	Executions  int            `json:"executions"`
 }
 
 // ShadowExecution records a parallel execution attempt
 type ShadowExecution struct {
-	ID            string         `json:"id"`
-	StrategyID    string         `json:"strategy_id"`
-	ParentTaskID  string         `json:"parent_task_id"`
-	StartTime     time.Time      `json:"start_time"`
-	EndTime       time.Time      `json:"end_time"`
-	Success       bool           `json:"success"`
-	Result        any            `json:"result"`
-	Error         string         `json:"error,omitempty"`
-	Metrics       ExecutionMetrics `json:"metrics"`
+	ID           string           `json:"id"`
+	StrategyID   string           `json:"strategy_id"`
+	ParentTaskID string           `json:"parent_task_id"`
+	StartTime    time.Time        `json:"start_time"`
+	EndTime      time.Time        `json:"end_time"`
+	Success      bool             `json:"success"`
+	Result       any              `json:"result"`
+	Error        string           `json:"error,omitempty"`
+	Metrics      ExecutionMetrics `json:"metrics"`
 }
 
 // ExecutionMetrics tracks performance and quality
 type ExecutionMetrics struct {
-	Latency         time.Duration `json:"latency"`
-	TokensUsed      int           `json:"tokens_used"`
-	CostUSD         float64       `json:"cost_usd"`
-	QualityScore    float64       `json:"quality_score"`
-	Hallucinations  int           `json:"hallucinations"`
-	ToolCalls       int           `json:"tool_calls"`
+	Latency        time.Duration `json:"latency"`
+	TokensUsed     int           `json:"tokens_used"`
+	CostUSD        float64       `json:"cost_usd"`
+	QualityScore   float64       `json:"quality_score"`
+	Hallucinations int           `json:"hallucinations"`
+	ToolCalls      int           `json:"tool_calls"`
 }
 
 // EvolutionEvent represents a learned improvement
 type EvolutionEvent struct {
-	Timestamp      time.Time      `json:"timestamp"`
-	StrategyID     string         `json:"strategy_id"`
-	ChangeType     string         `json:"change_type"`
-	OldValue       any            `json:"old_value"`
-	NewValue       any            `json:"new_value"`
-	Reason         string         `json:"reason"`
-	ImpactScore    float64        `json:"impact_score"`
+	Timestamp   time.Time `json:"timestamp"`
+	StrategyID  string    `json:"strategy_id"`
+	ChangeType  string    `json:"change_type"`
+	OldValue    any       `json:"old_value"`
+	NewValue    any       `json:"new_value"`
+	Reason      string    `json:"reason"`
+	ImpactScore float64   `json:"impact_score"`
 }
 
 // ShadowManager coordinates parallel strategy execution
@@ -354,11 +354,11 @@ func (sm *ShadowManager) GetMetrics() map[string]any {
 	defer sm.mu.RUnlock()
 
 	metrics := map[string]any{
-		"total_strategies": len(sm.strategies),
+		"total_strategies":   len(sm.strategies),
 		"enabled_strategies": 0,
-		"total_executions": len(sm.executions),
-		"evolution_events": len(sm.evolutions),
-		"strategies": make([]map[string]any, 0),
+		"total_executions":   len(sm.executions),
+		"evolution_events":   len(sm.evolutions),
+		"strategies":         make([]map[string]any, 0),
 	}
 
 	for _, s := range sm.strategies {

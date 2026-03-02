@@ -15,45 +15,45 @@ import (
 type NodeType string
 
 const (
-	NodeTrigger    NodeType = "trigger"
-	NodeAction     NodeType = "action"
-	NodeCondition  NodeType = "condition"
-	NodeLoop       NodeType = "loop"
-	NodeTransform  NodeType = "transform"
-	NodeMerge      NodeType = "merge"
+	NodeTrigger   NodeType = "trigger"
+	NodeAction    NodeType = "action"
+	NodeCondition NodeType = "condition"
+	NodeLoop      NodeType = "loop"
+	NodeTransform NodeType = "transform"
+	NodeMerge     NodeType = "merge"
 )
 
 // WorkflowNode represents a single node in the DAG
 type WorkflowNode struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Type        NodeType               `json:"type"`
-	Operation   string                 `json:"operation"`
-	Parameters  map[string]any         `json:"parameters"`
-	Position    [2]int                 `json:"position"`
-	Connections []string               `json:"connections"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Type        NodeType       `json:"type"`
+	Operation   string         `json:"operation"`
+	Parameters  map[string]any `json:"parameters"`
+	Position    [2]int         `json:"position"`
+	Connections []string       `json:"connections"`
 }
 
 // Workflow represents a complete n8n workflow
 type Workflow struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
+	ID          string                   `json:"id"`
+	Name        string                   `json:"name"`
+	Description string                   `json:"description"`
 	Nodes       map[string]*WorkflowNode `json:"nodes"`
-	CreatedAt   time.Time              `json:"created_at"`
-	Active      bool                   `json:"active"`
+	CreatedAt   time.Time                `json:"created_at"`
+	Active      bool                     `json:"active"`
 }
 
 // ExecutionContext holds workflow execution state
 type ExecutionContext struct {
-	WorkflowID   string                 `json:"workflow_id"`
-	ExecutionID  string                 `json:"execution_id"`
-	StartTime    time.Time              `json:"start_time"`
-	EndTime      time.Time              `json:"end_time"`
-	Status       string                 `json:"status"`
-	Data         map[string]any         `json:"data"`
-	Error        string                 `json:"error,omitempty"`
-	NodeResults  map[string]any         `json:"node_results"`
+	WorkflowID  string         `json:"workflow_id"`
+	ExecutionID string         `json:"execution_id"`
+	StartTime   time.Time      `json:"start_time"`
+	EndTime     time.Time      `json:"end_time"`
+	Status      string         `json:"status"`
+	Data        map[string]any `json:"data"`
+	Error       string         `json:"error,omitempty"`
+	NodeResults map[string]any `json:"node_results"`
 }
 
 // DAGCompiler converts natural language to n8n workflows

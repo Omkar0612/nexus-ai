@@ -54,10 +54,10 @@ type OutboundMessage struct {
 
 // BotConfig holds Telegram bot settings
 type BotConfig struct {
-	Token         string
+	Token          string
 	AllowedUserIDs []int64
-	AdminChatID   int64
-	Simulated     bool
+	AdminChatID    int64
+	Simulated      bool
 }
 
 // CommandHandler is a function that handles a bot command
@@ -65,12 +65,12 @@ type CommandHandler func(chatID int64, args string) string
 
 // TelegramCompanion manages the NEXUS Telegram bot
 type TelegramCompanion struct {
-	cfg        BotConfig
-	handlers   map[string]CommandHandler
-	mu         sync.RWMutex
-	sentLog    []OutboundMessage
-	client     *http.Client
-	baseURL    string
+	cfg      BotConfig
+	handlers map[string]CommandHandler
+	mu       sync.RWMutex
+	sentLog  []OutboundMessage
+	client   *http.Client
+	baseURL  string
 }
 
 // New creates a TelegramCompanion

@@ -19,12 +19,12 @@ type Controller struct {
 
 // Session represents an active agent execution that can be paused or killed.
 type Session struct {
-	ID              string
-	AgentName       string
-	StartTime       time.Time
-	State           SessionState
-	CredentialIDs   []string
-	PendingActions  []RecoverableAction
+	ID             string
+	AgentName      string
+	StartTime      time.Time
+	State          SessionState
+	CredentialIDs  []string
+	PendingActions []RecoverableAction
 }
 
 type SessionState string
@@ -37,13 +37,13 @@ const (
 
 // RecoverableAction represents a single agent action that can be rolled back.
 type RecoverableAction struct {
-	ID            string
-	ToolName      string
-	TargetSystem  string
-	Payload       map[string]interface{}
-	ExecutedAt    time.Time
+	ID             string
+	ToolName       string
+	TargetSystem   string
+	Payload        map[string]interface{}
+	ExecutedAt     time.Time
 	IdempotencyKey string
-	UndoScript    string // Optional: rollback logic
+	UndoScript     string // Optional: rollback logic
 }
 
 // CredentialStore defines the interface for revoking agent credentials.

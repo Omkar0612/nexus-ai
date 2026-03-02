@@ -32,7 +32,7 @@ type LoopEvent struct {
 	Input       string
 	RepeatCount int
 	DetectedAt  time.Time
-	EstTokens   int    // tokens wasted if loop had continued
+	EstTokens   int // tokens wasted if loop had continued
 	EstCostUSD  float64
 	Suggestion  string
 }

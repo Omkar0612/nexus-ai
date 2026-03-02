@@ -59,13 +59,13 @@ type ActionFunc func(ctx context.Context) error
 
 // HITLGate is the human-in-the-loop approval system
 type HITLGate struct {
-	mu          sync.RWMutex
-	pending     map[string]*ApprovalRequest
-	history     []ApprovalRequest
-	notify      func(req *ApprovalRequest) error
-	timeout     time.Duration
-	locked      bool // emergency lock — blocks all non-low-risk actions
-	onDecision  func(req *ApprovalRequest)
+	mu         sync.RWMutex
+	pending    map[string]*ApprovalRequest
+	history    []ApprovalRequest
+	notify     func(req *ApprovalRequest) error
+	timeout    time.Duration
+	locked     bool // emergency lock — blocks all non-low-risk actions
+	onDecision func(req *ApprovalRequest)
 }
 
 // NewHITLGate creates a new HITL gate

@@ -17,33 +17,33 @@ import (
 
 // PeerInfo represents a discovered peer in the mesh network
 type PeerInfo struct {
-	ID           string    `json:"id"`
-	Address      string    `json:"address"`
-	Port         int       `json:"port"`
-	GPUInfo      GPUInfo   `json:"gpu_info"`
-	LastSeen     time.Time `json:"last_seen"`
-	Available    bool      `json:"available"`
-	CurrentLoad  float64   `json:"current_load"`
+	ID          string    `json:"id"`
+	Address     string    `json:"address"`
+	Port        int       `json:"port"`
+	GPUInfo     GPUInfo   `json:"gpu_info"`
+	LastSeen    time.Time `json:"last_seen"`
+	Available   bool      `json:"available"`
+	CurrentLoad float64   `json:"current_load"`
 }
 
 // GPUInfo holds GPU capabilities and status
 type GPUInfo struct {
-	Model        string  `json:"model"`
-	MemoryTotal  int64   `json:"memory_total_mb"`
-	MemoryFree   int64   `json:"memory_free_mb"`
-	ComputeCaps  string  `json:"compute_caps"`
-	DriverVer    string  `json:"driver_version"`
-	Utilization  float64 `json:"utilization_percent"`
+	Model       string  `json:"model"`
+	MemoryTotal int64   `json:"memory_total_mb"`
+	MemoryFree  int64   `json:"memory_free_mb"`
+	ComputeCaps string  `json:"compute_caps"`
+	DriverVer   string  `json:"driver_version"`
+	Utilization float64 `json:"utilization_percent"`
 }
 
 // TaskRequest represents a computational task to be distributed
 type TaskRequest struct {
-	ID              string            `json:"id"`
-	Type            string            `json:"type"`
-	Payload         map[string]any    `json:"payload"`
-	RequiredMemory  int64             `json:"required_memory_mb"`
-	Priority        int               `json:"priority"`
-	TimeoutSeconds  int               `json:"timeout_seconds"`
+	ID             string         `json:"id"`
+	Type           string         `json:"type"`
+	Payload        map[string]any `json:"payload"`
+	RequiredMemory int64          `json:"required_memory_mb"`
+	Priority       int            `json:"priority"`
+	TimeoutSeconds int            `json:"timeout_seconds"`
 }
 
 // TaskResult contains the result of a distributed task
@@ -103,7 +103,7 @@ func NewMeshManager(localGPUInfo GPUInfo, config *Config) (*MeshManager, error) 
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	localPeer := &PeerInfo{
 		ID:          generateSecurePeerID(),
 		Address:     getLocalIP(),
@@ -115,13 +115,13 @@ func NewMeshManager(localGPUInfo GPUInfo, config *Config) (*MeshManager, error) 
 	}
 
 	return &MeshManager{
-		peers:         make(map[string]*PeerInfo),
-		localPeer:     localPeer,
-		config:        config,
-		taskQueue:     make(chan *TaskRequest, config.TaskQueueSize),
-		resultQueue:   make(chan *TaskResult, config.ResultQueueSize),
-		ctx:           ctx,
-		cancel:        cancel,
+		peers:       make(map[string]*PeerInfo),
+		localPeer:   localPeer,
+		config:      config,
+		taskQueue:   make(chan *TaskRequest, config.TaskQueueSize),
+		resultQueue: make(chan *TaskResult, config.ResultQueueSize),
+		ctx:         ctx,
+		cancel:      cancel,
 	}, nil
 }
 
@@ -150,11 +150,11 @@ func (m *MeshManager) Start() error {
 func (m *MeshManager) Stop() error {
 	log.Info().Msg("Stopping mesh network manager")
 	m.cancel()
-	
+
 	if m.discoveryTicker != nil {
 		m.discoveryTicker.Stop()
 	}
-	
+
 	// Close UDP connections
 	if m.broadcastConn != nil {
 		m.broadcastConn.Close()
@@ -162,7 +162,7 @@ func (m *MeshManager) Stop() error {
 	if m.listenConn != nil {
 		m.listenConn.Close()
 	}
-	
+
 	close(m.taskQueue)
 	close(m.resultQueue)
 	return nil
@@ -400,7 +400,7 @@ func (m *MeshManager) executeTask(task *TaskRequest, peer *PeerInfo) {
 	// TODO: Implement actual RPC call to peer
 	// This would use gRPC or HTTP to send the task to the peer
 	// Example: result, err := m.rpcClient.ExecuteTask(peer.Address, task)
-	
+
 	// For now, simulate execution
 	time.Sleep(100 * time.Millisecond)
 

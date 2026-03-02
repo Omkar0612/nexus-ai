@@ -19,8 +19,8 @@ Examples:
   nexus speak "Good morning, your briefing is ready"
   nexus speak --backend coqui --out briefing.wav "3 tasks today"
   nexus speak --backend elevenlabs "Meeting in 10 minutes"`,
-	Args:  cobra.MinimumNArgs(1),
-	RunE:  runSpeak,
+	Args: cobra.MinimumNArgs(1),
+	RunE: runSpeak,
 }
 
 func init() {

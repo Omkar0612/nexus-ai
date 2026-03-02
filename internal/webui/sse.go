@@ -10,7 +10,7 @@ import (
 // AgentEvent is broadcast to all SSE clients when an agent changes state.
 type AgentEvent struct {
 	Agent   string `json:"agent"`
-	Status  string `json:"status"`  // "running" | "done" | "error"
+	Status  string `json:"status"` // "running" | "done" | "error"
 	Message string `json:"message,omitempty"`
 }
 

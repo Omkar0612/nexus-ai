@@ -67,7 +67,7 @@ func TestEmailAutoRule(t *testing.T) {
 	a := New(EmailConfig{Simulated: true})
 	archived := 0
 	a.AddRule(AutoRule{
-		Name: "archive-spam",
+		Name:      "archive-spam",
 		Condition: func(em *Email) bool { return em.Priority == PrioritySpam },
 		Action:    func(em *Email) error { em.Archived = true; archived++; return nil },
 	})

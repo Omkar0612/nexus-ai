@@ -28,9 +28,9 @@ const maxInputBytes = 1 * 1024 * 1024
 
 // Skill is a callable unit exposed by a plugin.
 type Skill struct {
-	Name        string   // e.g. "weather"
-	Description string   // shown to LLM for routing decisions
-	Version     string   // semver
+	Name        string // e.g. "weather"
+	Description string // shown to LLM for routing decisions
+	Version     string // semver
 	Author      string
 	Perms       []string // declared permissions: "network", "filesystem", "vault"
 }

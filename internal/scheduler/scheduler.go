@@ -46,11 +46,11 @@ const (
 type JobStatus string
 
 const (
-	StatusPending  JobStatus = "pending"
-	StatusRunning  JobStatus = "running"
-	StatusSuccess  JobStatus = "success"
-	StatusFailed   JobStatus = "failed"
-	StatusSkipped  JobStatus = "skipped"
+	StatusPending JobStatus = "pending"
+	StatusRunning JobStatus = "running"
+	StatusSuccess JobStatus = "success"
+	StatusFailed  JobStatus = "failed"
+	StatusSkipped JobStatus = "skipped"
 )
 
 // Condition is a function that gates whether a job should run
@@ -58,45 +58,45 @@ type Condition func(ctx context.Context) (bool, string)
 
 // JobRun records a single job execution
 type JobRun struct {
-	JobID     string
-	Status    JobStatus
-	StartedAt time.Time
+	JobID      string
+	Status     JobStatus
+	StartedAt  time.Time
 	FinishedAt time.Time
-	Output    string
-	Error     string
+	Output     string
+	Error      string
 }
 
 // Job defines a scheduled task
 type Job struct {
-	ID           string
-	Name         string
-	Description  string
-	Trigger      TriggerType
-	CronExpr     string          // e.g. "0 9 * * *"
-	Interval     time.Duration
-	Timezone     string          // e.g. "Asia/Dubai"
-	Conditions   []Condition
-	Handler      func(ctx context.Context) error
-	MaxRetries   int
-	RetryBackoff time.Duration
+	ID            string
+	Name          string
+	Description   string
+	Trigger       TriggerType
+	CronExpr      string // e.g. "0 9 * * *"
+	Interval      time.Duration
+	Timezone      string // e.g. "Asia/Dubai"
+	Conditions    []Condition
+	Handler       func(ctx context.Context) error
+	MaxRetries    int
+	RetryBackoff  time.Duration
 	CatchUpMissed bool
-	Enabled      bool
+	Enabled       bool
 	// runtime state
-	LastRun      time.Time
-	NextRun      time.Time
-	RunCount     int
-	FailCount    int
-	History      []JobRun
-	mu           sync.Mutex
+	LastRun   time.Time
+	NextRun   time.Time
+	RunCount  int
+	FailCount int
+	History   []JobRun
+	mu        sync.Mutex
 }
 
 // Scheduler manages all registered jobs
 type Scheduler struct {
-	jobs    map[string]*Job
-	mu      sync.RWMutex
-	ctx     context.Context
-	cancel  context.CancelFunc
-	tick    time.Duration
+	jobs   map[string]*Job
+	mu     sync.RWMutex
+	ctx    context.Context
+	cancel context.CancelFunc
+	tick   time.Duration
 }
 
 // New creates a new smart scheduler

@@ -18,19 +18,19 @@ type Breaker struct {
 
 // ToolState tracks the health of a specific agent tool integration.
 type ToolState struct {
-	ToolName          string
-	State             CircuitState
-	ConsecutiveFails  int
-	LastFailTime      time.Time
-	TotalCalls        int
-	FailedCalls       int
+	ToolName         string
+	State            CircuitState
+	ConsecutiveFails int
+	LastFailTime     time.Time
+	TotalCalls       int
+	FailedCalls      int
 }
 
 type CircuitState string
 
 const (
-	StateClosed   CircuitState = "CLOSED"   // Normal operation
-	StateOpen     CircuitState = "OPEN"     // Circuit tripped, calls blocked
+	StateClosed   CircuitState = "CLOSED"    // Normal operation
+	StateOpen     CircuitState = "OPEN"      // Circuit tripped, calls blocked
 	StateHalfOpen CircuitState = "HALF_OPEN" // Testing if service recovered
 )
 

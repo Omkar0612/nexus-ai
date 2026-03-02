@@ -14,8 +14,8 @@ import (
 
 // Deployer manages n8n workflow deployment and execution.
 type Deployer struct {
-	n8nURL    string
-	apiKey    string
+	n8nURL     string
+	apiKey     string
 	httpClient *http.Client
 }
 

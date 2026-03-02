@@ -52,22 +52,22 @@ type CallRecord struct {
 
 // PhoneConfig holds Twilio credentials and settings
 type PhoneConfig struct {
-	AccountSID  string
-	AuthToken   string
-	FromNumber  string // your Twilio number
-	WebhookURL  string // public URL for Twilio callbacks
-	RateLimit   int    // max calls per hour
-	Simulated   bool   // true = log only, no real API calls
+	AccountSID string
+	AuthToken  string
+	FromNumber string // your Twilio number
+	WebhookURL string // public URL for Twilio callbacks
+	RateLimit  int    // max calls per hour
+	Simulated  bool   // true = log only, no real API calls
 }
 
 // PhoneAgent manages calls and SMS for NEXUS
 type PhoneAgent struct {
-	cfg      PhoneConfig
-	mu       sync.Mutex
-	records  []CallRecord
+	cfg           PhoneConfig
+	mu            sync.Mutex
+	records       []CallRecord
 	callsThisHour int
-	hourWindow time.Time
-	onInbound  func(CallRecord)
+	hourWindow    time.Time
+	onInbound     func(CallRecord)
 }
 
 // New creates a PhoneAgent

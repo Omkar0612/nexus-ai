@@ -16,43 +16,43 @@ import (
 type PatternType string
 
 const (
-	PatternTemporal  PatternType = "temporal"   // Time-based patterns
-	PatternContextual PatternType = "contextual" // Context-dependent patterns  
+	PatternTemporal   PatternType = "temporal"   // Time-based patterns
+	PatternContextual PatternType = "contextual" // Context-dependent patterns
 	PatternSequential PatternType = "sequential" // Task sequences
 )
 
 // UserPattern represents a learned behavior pattern
 type UserPattern struct {
-	ID          string                 `json:"id"`
-	Type        PatternType            `json:"type"`
-	Trigger     map[string]any         `json:"trigger"`
-	ExpectedTask string                `json:"expected_task"`
-	Confidence  float64                `json:"confidence"`
-	Occurrences int                    `json:"occurrences"`
-	LastSeen    time.Time              `json:"last_seen"`
-	Context     map[string]any         `json:"context"`
+	ID           string         `json:"id"`
+	Type         PatternType    `json:"type"`
+	Trigger      map[string]any `json:"trigger"`
+	ExpectedTask string         `json:"expected_task"`
+	Confidence   float64        `json:"confidence"`
+	Occurrences  int            `json:"occurrences"`
+	LastSeen     time.Time      `json:"last_seen"`
+	Context      map[string]any `json:"context"`
 }
 
 // Prediction represents a forecasted task
 type Prediction struct {
-	ID             string         `json:"id"`
-	TaskType       string         `json:"task_type"`
-	ExpectedTime   time.Time      `json:"expected_time"`
-	Confidence     float64        `json:"confidence"`
-	PatternID      string         `json:"pattern_id"`
-	PreComputed    bool           `json:"pre_computed"`
-	CachedResult   any            `json:"cached_result,omitempty"`
-	ComputeTime    time.Duration  `json:"compute_time"`
+	ID           string        `json:"id"`
+	TaskType     string        `json:"task_type"`
+	ExpectedTime time.Time     `json:"expected_time"`
+	Confidence   float64       `json:"confidence"`
+	PatternID    string        `json:"pattern_id"`
+	PreComputed  bool          `json:"pre_computed"`
+	CachedResult any           `json:"cached_result,omitempty"`
+	ComputeTime  time.Duration `json:"compute_time"`
 }
 
 // TaskRecord is a task execution record for learning
 type TaskRecord struct {
-	ID          string         `json:"id"`
-	Type        string         `json:"type"`
-	Timestamp   time.Time      `json:"timestamp"`
-	Context     map[string]any `json:"context"`
-	Duration    time.Duration  `json:"duration"`
-	Success     bool           `json:"success"`
+	ID        string         `json:"id"`
+	Type      string         `json:"type"`
+	Timestamp time.Time      `json:"timestamp"`
+	Context   map[string]any `json:"context"`
+	Duration  time.Duration  `json:"duration"`
+	Success   bool           `json:"success"`
 }
 
 // Config holds predictive engine configuration
@@ -110,14 +110,14 @@ func NewPredictiveEngine(config *Config) (*PredictiveEngine, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &PredictiveEngine{
-		patterns:            make(map[string]*UserPattern),
-		predictions:         make(map[string]*Prediction),
-		taskHistory:         make([]*TaskRecord, 0, config.HistorySize),
-		precomputeQueue:     make(chan *Prediction, config.PreComputeQueueSize),
-		ctx:                 ctx,
-		cancel:              cancel,
-		config:              config,
-		learningEnabled:     true,
+		patterns:        make(map[string]*UserPattern),
+		predictions:     make(map[string]*Prediction),
+		taskHistory:     make([]*TaskRecord, 0, config.HistorySize),
+		precomputeQueue: make(chan *Prediction, config.PreComputeQueueSize),
+		ctx:             ctx,
+		cancel:          cancel,
+		config:          config,
+		learningEnabled: true,
 	}, nil
 }
 
@@ -173,7 +173,7 @@ func (pe *PredictiveEngine) RecordTask(record *TaskRecord) error {
 		Str("task_id", record.ID).
 		Str("type", record.Type).
 		Msg("Recorded task execution")
-	
+
 	return nil
 }
 
@@ -467,7 +467,7 @@ func (pe *PredictiveEngine) executePreComputation(prediction *Prediction) {
 	// TODO: Implement actual task execution
 	// This would call the agent's task executor with the predicted task
 	// Example: result, err := pe.taskExecutor.Execute(prediction.TaskType, prediction.Context)
-	
+
 	// For now, simulate computation
 	time.Sleep(100 * time.Millisecond)
 
@@ -518,12 +518,12 @@ func (pe *PredictiveEngine) GetMetrics() map[string]any {
 	}
 
 	return map[string]any{
-		"patterns_learned":    len(pe.patterns),
-		"active_predictions":  len(pe.predictions),
-		"pre_computed_tasks":  preComputeCount,
-		"task_history_size":   len(pe.taskHistory),
-		"avg_confidence":      math.Round(avgConfidence*100) / 100,
-		"learning_enabled":    pe.learningEnabled,
+		"patterns_learned":   len(pe.patterns),
+		"active_predictions": len(pe.predictions),
+		"pre_computed_tasks": preComputeCount,
+		"task_history_size":  len(pe.taskHistory),
+		"avg_confidence":     math.Round(avgConfidence*100) / 100,
+		"learning_enabled":   pe.learningEnabled,
 	}
 }
 
