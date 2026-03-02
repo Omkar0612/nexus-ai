@@ -33,11 +33,11 @@
 Most AI frameworks show you how to build a "weather bot". Here is what NEXUS does in production right now:
 
 #### 1. The Zero-API Legacy Hack
-> **You:** "Scrape my company's 15-year-old FirstBit ERP for unpaid invoices. There is no API." <br>
+> **You:** "Scrape my company's 15-year-old internal accounting software for unpaid invoices. There is no API." <br>
 > **NEXUS:** Launches a hidden headless browser, logs in using your Vault credentials, intercepts the raw network traffic (HAR), discovers the undocumented internal GraphQL endpoint, writes a custom Go plugin wrapping the endpoint, compiles it to WebAssembly via Auto-Forge, hot-loads it into its own brain in 200ms, and hands you a CSV of unpaid invoices.
 
 #### 2. The Multi-Device Hive Mind
-> **You (on your iPhone at a coffee shop):** "Generate a 4K photorealistic image of a cyberpunk Dubai." <br>
+> **You (on your iPhone at a coffee shop):** "Generate a 4K photorealistic image of a cyberpunk city." <br>
 > **NEXUS:** Your phone realizes it doesn't have a GPU. It uses mDNS to detect your RTX 4090 desktop PC sitting asleep at home. It routes the Stable Diffusion prompt over your mesh network to the PC, generates the image using your home electricity, and streams the finished 4K `.png` back to your iPhone screen. **Cost: $0.00**.
 
 #### 3. The "Speak it into existence" Automation
@@ -130,7 +130,7 @@ When a task hits the Multi-Agent Bus, NEXUS pings the `/pricing` and `/health` e
 
 ### 🔄 Natural Language to n8n DAG Compiler
 > *Stop dragging and dropping. Speak your automations into existence.*
-Tell NEXUS: *"Check my FirstBit ERP daily, and if revenue drops, ping a Meta Ads agent."* NEXUS natively compiles this logic into a valid n8n Directed Acyclic Graph (DAG) JSON, spaces the nodes out perfectly, maps the connections, and deploys it directly to your running n8n instance via API. 
+Tell NEXUS: *"Check my company ERP daily, and if revenue drops, ping a Meta Ads agent."* NEXUS natively compiles this logic into a valid n8n Directed Acyclic Graph (DAG) JSON, spaces the nodes out perfectly, maps the connections, and deploys it directly to your running n8n instance via API. 
 
 ### 🛡️ Agentic Fuzzing (Neuro-Fuzzing)
 > *An adversarial agent that attacks the code the creator agent just wrote.*
@@ -146,7 +146,7 @@ AutoAgent and LangChain sit idle until you type a prompt. NEXUS monitors your wo
 
 ### ⚡ Auto-Forge (Hot-Loaded WASM Agents)
 > *Natural language agent creation without Docker restarts.*
-Tell NEXUS to create a new agent (e.g. "Create a Dubai Real Estate scraper"). NEXUS autonomously writes the Go code, compiles it to WebAssembly via the NEXUS Cloud Compiler, and hot-loads it into the running sandbox in milliseconds. Zero restarts. Zero dependencies.
+Tell NEXUS to create a new agent (e.g. "Create a Real Estate scraper"). NEXUS autonomously writes the Go code, compiles it to WebAssembly via the NEXUS Cloud Compiler, and hot-loads it into the running sandbox in milliseconds. Zero restarts. Zero dependencies.
 
 ### 👁️ UI-to-API Reverse Engineering
 > *If an app has a UI, NEXUS can build an API for it.*
