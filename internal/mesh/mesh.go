@@ -2,9 +2,13 @@ package mesh
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -52,27 +56,58 @@ type TaskResult struct {
 	CompletedAt time.Time      `json:"completed_at"`
 }
 
+// Config holds mesh network configuration
+type Config struct {
+	DiscoveryPort     int
+	DiscoveryInterval time.Duration
+	PeerTimeout       time.Duration
+	TaskQueueSize     int
+	ResultQueueSize   int
+}
+
+// DefaultConfig returns default mesh configuration
+func DefaultConfig() *Config {
+	return &Config{
+		DiscoveryPort:     getEnvInt("NEXUS_MESH_PORT", 5353),
+		DiscoveryInterval: getEnvDuration("NEXUS_MESH_DISCOVERY_INTERVAL", 5*time.Second),
+		PeerTimeout:       getEnvDuration("NEXUS_MESH_PEER_TIMEOUT", 60*time.Second),
+		TaskQueueSize:     getEnvInt("NEXUS_MESH_TASK_QUEUE_SIZE", 100),
+		ResultQueueSize:   getEnvInt("NEXUS_MESH_RESULT_QUEUE_SIZE", 100),
+	}
+}
+
 // MeshManager coordinates P2P GPU resource sharing
 type MeshManager struct {
 	mu              sync.RWMutex
 	peers           map[string]*PeerInfo
 	localPeer       *PeerInfo
-	discoveryPort   int
+	config          *Config
 	taskQueue       chan *TaskRequest
 	resultQueue     chan *TaskResult
 	ctx             context.Context
 	cancel          context.CancelFunc
 	discoveryTicker *time.Ticker
+	broadcastConn   *net.UDPConn
+	listenConn      *net.UDPConn
 }
 
 // NewMeshManager creates a new P2P mesh coordinator
-func NewMeshManager(localGPUInfo GPUInfo, discoveryPort int) *MeshManager {
+func NewMeshManager(localGPUInfo GPUInfo, config *Config) (*MeshManager, error) {
+	if config == nil {
+		config = DefaultConfig()
+	}
+
+	// Validate configuration
+	if config.DiscoveryPort < 1024 || config.DiscoveryPort > 65535 {
+		return nil, fmt.Errorf("invalid discovery port: %d (must be 1024-65535)", config.DiscoveryPort)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	
 	localPeer := &PeerInfo{
-		ID:          generatePeerID(),
+		ID:          generateSecurePeerID(),
 		Address:     getLocalIP(),
-		Port:        discoveryPort,
+		Port:        config.DiscoveryPort,
 		GPUInfo:     localGPUInfo,
 		LastSeen:    time.Now(),
 		Available:   true,
@@ -82,17 +117,22 @@ func NewMeshManager(localGPUInfo GPUInfo, discoveryPort int) *MeshManager {
 	return &MeshManager{
 		peers:         make(map[string]*PeerInfo),
 		localPeer:     localPeer,
-		discoveryPort: discoveryPort,
-		taskQueue:     make(chan *TaskRequest, 100),
-		resultQueue:   make(chan *TaskResult, 100),
+		config:        config,
+		taskQueue:     make(chan *TaskRequest, config.TaskQueueSize),
+		resultQueue:   make(chan *TaskResult, config.ResultQueueSize),
 		ctx:           ctx,
 		cancel:        cancel,
-	}
+	}, nil
 }
 
 // Start begins peer discovery and task distribution
 func (m *MeshManager) Start() error {
 	log.Info().Str("peer_id", m.localPeer.ID).Msg("Starting mesh network manager")
+
+	// Initialize UDP connections
+	if err := m.initializeConnections(); err != nil {
+		return fmt.Errorf("failed to initialize connections: %w", err)
+	}
 
 	// Start mDNS discovery
 	go m.runDiscovery()
@@ -110,16 +150,63 @@ func (m *MeshManager) Start() error {
 func (m *MeshManager) Stop() error {
 	log.Info().Msg("Stopping mesh network manager")
 	m.cancel()
+	
 	if m.discoveryTicker != nil {
 		m.discoveryTicker.Stop()
 	}
+	
+	// Close UDP connections
+	if m.broadcastConn != nil {
+		m.broadcastConn.Close()
+	}
+	if m.listenConn != nil {
+		m.listenConn.Close()
+	}
+	
 	close(m.taskQueue)
 	close(m.resultQueue)
 	return nil
 }
 
+// initializeConnections sets up reusable UDP connections
+func (m *MeshManager) initializeConnections() error {
+	// Create broadcast connection
+	broadcastConn, err := net.ListenUDP("udp", &net.UDPAddr{
+		IP:   net.IPv4zero,
+		Port: 0, // Use random port for broadcasting
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create broadcast connection: %w", err)
+	}
+	m.broadcastConn = broadcastConn
+
+	// Create listen connection
+	listenConn, err := net.ListenUDP("udp", &net.UDPAddr{
+		IP:   net.IPv4zero,
+		Port: m.config.DiscoveryPort,
+	})
+	if err != nil {
+		broadcastConn.Close()
+		return fmt.Errorf("failed to create listen connection: %w", err)
+	}
+	m.listenConn = listenConn
+
+	return nil
+}
+
 // SubmitTask adds a computational task to the distribution queue
 func (m *MeshManager) SubmitTask(task *TaskRequest) error {
+	// Validate task
+	if task == nil {
+		return fmt.Errorf("task cannot be nil")
+	}
+	if task.ID == "" {
+		return fmt.Errorf("task ID cannot be empty")
+	}
+	if task.RequiredMemory < 0 {
+		return fmt.Errorf("required memory cannot be negative")
+	}
+
 	select {
 	case m.taskQueue <- task:
 		log.Debug().Str("task_id", task.ID).Msg("Task submitted to mesh")
@@ -159,8 +246,11 @@ func (m *MeshManager) GetActivePeers() []*PeerInfo {
 
 // runDiscovery handles mDNS peer discovery
 func (m *MeshManager) runDiscovery() {
-	m.discoveryTicker = time.NewTicker(5 * time.Second)
+	m.discoveryTicker = time.NewTicker(m.config.DiscoveryInterval)
 	defer m.discoveryTicker.Stop()
+
+	// Start listener goroutine
+	go m.listenForPeers()
 
 	// Broadcast presence
 	for {
@@ -169,73 +259,78 @@ func (m *MeshManager) runDiscovery() {
 			return
 		case <-m.discoveryTicker.C:
 			m.broadcastPresence()
-			m.discoverPeers()
 		}
 	}
 }
 
 // broadcastPresence announces this peer to the network
 func (m *MeshManager) broadcastPresence() {
-	conn, err := net.ListenUDP("udp", &net.UDPAddr{
-		IP:   net.IPv4zero,
-		Port: m.discoveryPort,
-	})
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to create UDP listener")
+	if m.broadcastConn == nil {
 		return
 	}
-	defer conn.Close()
 
-	m.mu.RLock()
+	m.mu.Lock()
 	m.localPeer.LastSeen = time.Now()
-	data, _ := json.Marshal(m.localPeer)
-	m.mu.RUnlock()
+	data, err := json.Marshal(m.localPeer)
+	m.mu.Unlock()
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal peer info")
+		return
+	}
 
 	addr := &net.UDPAddr{
 		IP:   net.IPv4(224, 0, 0, 251), // mDNS multicast
-		Port: m.discoveryPort,
+		Port: m.config.DiscoveryPort,
 	}
 
-	_, err = conn.WriteToUDP(data, addr)
+	_, err = m.broadcastConn.WriteToUDP(data, addr)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to broadcast presence")
 	}
 }
 
-// discoverPeers listens for peer announcements
-func (m *MeshManager) discoverPeers() {
-	conn, err := net.ListenUDP("udp", &net.UDPAddr{
-		IP:   net.IPv4zero,
-		Port: m.discoveryPort,
-	})
-	if err != nil {
+// listenForPeers continuously listens for peer announcements
+func (m *MeshManager) listenForPeers() {
+	if m.listenConn == nil {
 		return
 	}
-	defer conn.Close()
 
-	conn.SetReadDeadline(time.Now().Add(1 * time.Second))
 	buf := make([]byte, 4096)
 
-	n, _, err := conn.ReadFromUDP(buf)
-	if err != nil {
-		return
+	for {
+		select {
+		case <-m.ctx.Done():
+			return
+		default:
+			m.listenConn.SetReadDeadline(time.Now().Add(1 * time.Second))
+			n, _, err := m.listenConn.ReadFromUDP(buf)
+			if err != nil {
+				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+					continue
+				}
+				log.Debug().Err(err).Msg("Failed to read UDP packet")
+				continue
+			}
+
+			var peer PeerInfo
+			if err := json.Unmarshal(buf[:n], &peer); err != nil {
+				log.Debug().Err(err).Msg("Failed to unmarshal peer info")
+				continue
+			}
+
+			// Don't add self
+			if peer.ID == m.localPeer.ID {
+				continue
+			}
+
+			m.mu.Lock()
+			m.peers[peer.ID] = &peer
+			m.mu.Unlock()
+
+			log.Debug().Str("peer_id", peer.ID).Str("address", peer.Address).Msg("Discovered peer")
+		}
 	}
-
-	var peer PeerInfo
-	if err := json.Unmarshal(buf[:n], &peer); err != nil {
-		return
-	}
-
-	// Don't add self
-	if peer.ID == m.localPeer.ID {
-		return
-	}
-
-	m.mu.Lock()
-	m.peers[peer.ID] = &peer
-	m.mu.Unlock()
-
-	log.Debug().Str("peer_id", peer.ID).Str("address", peer.Address).Msg("Discovered peer")
 }
 
 // runTaskScheduler distributes tasks to optimal peers
@@ -303,6 +398,9 @@ func (m *MeshManager) executeTask(task *TaskRequest, peer *PeerInfo) {
 	start := time.Now()
 
 	// TODO: Implement actual RPC call to peer
+	// This would use gRPC or HTTP to send the task to the peer
+	// Example: result, err := m.rpcClient.ExecuteTask(peer.Address, task)
+	
 	// For now, simulate execution
 	time.Sleep(100 * time.Millisecond)
 
@@ -314,7 +412,11 @@ func (m *MeshManager) executeTask(task *TaskRequest, peer *PeerInfo) {
 		CompletedAt: time.Now(),
 	}
 
-	m.resultQueue <- result
+	select {
+	case m.resultQueue <- result:
+	case <-m.ctx.Done():
+		log.Debug().Str("task_id", task.ID).Msg("Task result discarded (context cancelled)")
+	}
 }
 
 // runPeerHealthCheck removes stale peers
@@ -338,7 +440,7 @@ func (m *MeshManager) cleanupStalePeers() {
 	defer m.mu.Unlock()
 
 	for id, peer := range m.peers {
-		if time.Since(peer.LastSeen) > 60*time.Second {
+		if time.Since(peer.LastSeen) > m.config.PeerTimeout {
 			log.Info().Str("peer_id", id).Msg("Removing stale peer")
 			delete(m.peers, id)
 		}
@@ -347,8 +449,13 @@ func (m *MeshManager) cleanupStalePeers() {
 
 // Helper functions
 
-func generatePeerID() string {
-	return fmt.Sprintf("peer-%d", time.Now().UnixNano())
+func generateSecurePeerID() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback to timestamp-based ID
+		return fmt.Sprintf("peer-%d", time.Now().UnixNano())
+	}
+	return "peer-" + hex.EncodeToString(b)
 }
 
 func getLocalIP() string {
@@ -365,4 +472,22 @@ func getLocalIP() string {
 		}
 	}
 	return "127.0.0.1"
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if val := os.Getenv(key); val != "" {
+		if i, err := strconv.Atoi(val); err == nil {
+			return i
+		}
+	}
+	return defaultValue
+}
+
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	if val := os.Getenv(key); val != "" {
+		if d, err := time.ParseDuration(val); err == nil {
+			return d
+		}
+	}
+	return defaultValue
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -43,7 +45,7 @@ type Prediction struct {
 	ComputeTime    time.Duration  `json:"compute_time"`
 }
 
-// Task execution record for learning
+// TaskRecord is a task execution record for learning
 type TaskRecord struct {
 	ID          string         `json:"id"`
 	Type        string         `json:"type"`
@@ -51,6 +53,28 @@ type TaskRecord struct {
 	Context     map[string]any `json:"context"`
 	Duration    time.Duration  `json:"duration"`
 	Success     bool           `json:"success"`
+}
+
+// Config holds predictive engine configuration
+type Config struct {
+	ConfidenceThreshold  float64
+	HistorySize          int
+	LearningInterval     time.Duration
+	PredictionInterval   time.Duration
+	MinPatternOccurrence int
+	PreComputeQueueSize  int
+}
+
+// DefaultConfig returns default predictive engine configuration
+func DefaultConfig() *Config {
+	return &Config{
+		ConfidenceThreshold:  getEnvFloat("NEXUS_PREDICTIVE_CONFIDENCE", 0.7),
+		HistorySize:          getEnvInt("NEXUS_PREDICTIVE_HISTORY_SIZE", 1000),
+		LearningInterval:     getEnvDuration("NEXUS_PREDICTIVE_LEARNING_INTERVAL", 60*time.Second),
+		PredictionInterval:   getEnvDuration("NEXUS_PREDICTIVE_PREDICTION_INTERVAL", 30*time.Second),
+		MinPatternOccurrence: getEnvInt("NEXUS_PREDICTIVE_MIN_OCCURRENCE", 3),
+		PreComputeQueueSize:  getEnvInt("NEXUS_PREDICTIVE_QUEUE_SIZE", 50),
+	}
 }
 
 // PredictiveEngine learns patterns and pre-computes tasks
@@ -62,24 +86,39 @@ type PredictiveEngine struct {
 	precomputeQueue chan *Prediction
 	ctx             context.Context
 	cancel          context.CancelFunc
+	config          *Config
 	learningEnabled bool
-	confidenceThreshold float64
 }
 
 // NewPredictiveEngine creates a new prediction engine
-func NewPredictiveEngine(confidenceThreshold float64) *PredictiveEngine {
+func NewPredictiveEngine(config *Config) (*PredictiveEngine, error) {
+	if config == nil {
+		config = DefaultConfig()
+	}
+
+	// Validate configuration
+	if config.ConfidenceThreshold < 0 || config.ConfidenceThreshold > 1 {
+		return nil, fmt.Errorf("confidence threshold must be between 0 and 1, got: %f", config.ConfidenceThreshold)
+	}
+	if config.HistorySize < 10 {
+		return nil, fmt.Errorf("history size must be at least 10, got: %d", config.HistorySize)
+	}
+	if config.MinPatternOccurrence < 2 {
+		return nil, fmt.Errorf("minimum pattern occurrence must be at least 2, got: %d", config.MinPatternOccurrence)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &PredictiveEngine{
 		patterns:            make(map[string]*UserPattern),
 		predictions:         make(map[string]*Prediction),
-		taskHistory:         make([]*TaskRecord, 0, 1000),
-		precomputeQueue:     make(chan *Prediction, 50),
+		taskHistory:         make([]*TaskRecord, 0, config.HistorySize),
+		precomputeQueue:     make(chan *Prediction, config.PreComputeQueueSize),
 		ctx:                 ctx,
 		cancel:              cancel,
+		config:              config,
 		learningEnabled:     true,
-		confidenceThreshold: confidenceThreshold,
-	}
+	}, nil
 }
 
 // Start begins pattern learning and pre-computation
@@ -109,21 +148,33 @@ func (pe *PredictiveEngine) Stop() error {
 }
 
 // RecordTask adds a task execution to the learning dataset
-func (pe *PredictiveEngine) RecordTask(record *TaskRecord) {
+func (pe *PredictiveEngine) RecordTask(record *TaskRecord) error {
+	if record == nil {
+		return fmt.Errorf("task record cannot be nil")
+	}
+	if record.ID == "" {
+		return fmt.Errorf("task record ID cannot be empty")
+	}
+	if record.Type == "" {
+		return fmt.Errorf("task record type cannot be empty")
+	}
+
 	pe.mu.Lock()
 	defer pe.mu.Unlock()
 
 	pe.taskHistory = append(pe.taskHistory, record)
 
-	// Keep only recent history (last 1000 tasks)
-	if len(pe.taskHistory) > 1000 {
-		pe.taskHistory = pe.taskHistory[len(pe.taskHistory)-1000:]
+	// Keep only recent history
+	if len(pe.taskHistory) > pe.config.HistorySize {
+		pe.taskHistory = pe.taskHistory[len(pe.taskHistory)-pe.config.HistorySize:]
 	}
 
 	log.Debug().
 		Str("task_id", record.ID).
 		Str("type", record.Type).
 		Msg("Recorded task execution")
+	
+	return nil
 }
 
 // GetPrediction retrieves a prediction if available
@@ -163,7 +214,7 @@ func (pe *PredictiveEngine) GetUpcomingPredictions(window time.Duration) []*Pred
 
 // runPatternLearning analyzes task history for patterns
 func (pe *PredictiveEngine) runPatternLearning() {
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(pe.config.LearningInterval)
 	defer ticker.Stop()
 
 	for {
@@ -178,21 +229,28 @@ func (pe *PredictiveEngine) runPatternLearning() {
 
 // learnPatterns extracts patterns from task history
 func (pe *PredictiveEngine) learnPatterns() {
+	// Clone task history to avoid race conditions
+	pe.mu.RLock()
+	if len(pe.taskHistory) < 10 {
+		pe.mu.RUnlock()
+		return // Need sufficient data
+	}
+	history := make([]*TaskRecord, len(pe.taskHistory))
+	copy(history, pe.taskHistory)
+	pe.mu.RUnlock()
+
+	// Now work with cloned data without holding lock
 	pe.mu.Lock()
 	defer pe.mu.Unlock()
 
-	if len(pe.taskHistory) < 10 {
-		return // Need sufficient data
-	}
-
 	// Detect temporal patterns (e.g., daily at 9 AM)
-	pe.detectTemporalPatterns()
+	pe.detectTemporalPatterns(history)
 
 	// Detect sequential patterns (e.g., task A → task B)
-	pe.detectSequentialPatterns()
+	pe.detectSequentialPatterns(history)
 
 	// Detect contextual patterns (e.g., when X happens, do Y)
-	pe.detectContextualPatterns()
+	pe.detectContextualPatterns(history)
 
 	log.Info().
 		Int("patterns", len(pe.patterns)).
@@ -200,11 +258,11 @@ func (pe *PredictiveEngine) learnPatterns() {
 }
 
 // detectTemporalPatterns finds time-based patterns
-func (pe *PredictiveEngine) detectTemporalPatterns() {
+func (pe *PredictiveEngine) detectTemporalPatterns(history []*TaskRecord) {
 	// Group tasks by hour of day
 	hourlyTasks := make(map[int]map[string]int)
 
-	for _, task := range pe.taskHistory {
+	for _, task := range history {
 		hour := task.Timestamp.Hour()
 		if hourlyTasks[hour] == nil {
 			hourlyTasks[hour] = make(map[string]int)
@@ -215,9 +273,9 @@ func (pe *PredictiveEngine) detectTemporalPatterns() {
 	// Find patterns with high frequency
 	for hour, tasks := range hourlyTasks {
 		for taskType, count := range tasks {
-			if count >= 3 { // Minimum occurrences
+			if count >= pe.config.MinPatternOccurrence {
 				patternID := fmt.Sprintf("temporal-%d-%s", hour, taskType)
-				confidence := float64(count) / float64(len(pe.taskHistory))
+				confidence := float64(count) / float64(len(history))
 
 				pe.patterns[patternID] = &UserPattern{
 					ID:   patternID,
@@ -241,24 +299,24 @@ func (pe *PredictiveEngine) detectTemporalPatterns() {
 }
 
 // detectSequentialPatterns finds task sequences
-func (pe *PredictiveEngine) detectSequentialPatterns() {
-	if len(pe.taskHistory) < 2 {
+func (pe *PredictiveEngine) detectSequentialPatterns(history []*TaskRecord) {
+	if len(history) < 2 {
 		return
 	}
 
 	// Find common sequences
 	sequences := make(map[string]int)
 
-	for i := 0; i < len(pe.taskHistory)-1; i++ {
-		seq := fmt.Sprintf("%s->%s", pe.taskHistory[i].Type, pe.taskHistory[i+1].Type)
+	for i := 0; i < len(history)-1; i++ {
+		seq := fmt.Sprintf("%s->%s", history[i].Type, history[i+1].Type)
 		sequences[seq]++
 	}
 
 	// Create patterns for frequent sequences
 	for seq, count := range sequences {
-		if count >= 3 {
+		if count >= pe.config.MinPatternOccurrence {
 			patternID := fmt.Sprintf("sequential-%s", seq)
-			confidence := float64(count) / float64(len(pe.taskHistory))
+			confidence := float64(count) / float64(len(history))
 
 			pe.patterns[patternID] = &UserPattern{
 				ID:           patternID,
@@ -273,11 +331,11 @@ func (pe *PredictiveEngine) detectSequentialPatterns() {
 }
 
 // detectContextualPatterns finds context-dependent patterns
-func (pe *PredictiveEngine) detectContextualPatterns() {
+func (pe *PredictiveEngine) detectContextualPatterns(history []*TaskRecord) {
 	// Group by context keys
 	contextualTasks := make(map[string]map[string]int)
 
-	for _, task := range pe.taskHistory {
+	for _, task := range history {
 		for key, value := range task.Context {
 			contextKey := fmt.Sprintf("%s=%v", key, value)
 			if contextualTasks[contextKey] == nil {
@@ -290,9 +348,9 @@ func (pe *PredictiveEngine) detectContextualPatterns() {
 	// Create patterns
 	for contextKey, tasks := range contextualTasks {
 		for taskType, count := range tasks {
-			if count >= 3 {
+			if count >= pe.config.MinPatternOccurrence {
 				patternID := fmt.Sprintf("contextual-%s-%s", contextKey, taskType)
-				confidence := float64(count) / float64(len(pe.taskHistory))
+				confidence := float64(count) / float64(len(history))
 
 				pe.patterns[patternID] = &UserPattern{
 					ID:           patternID,
@@ -309,7 +367,7 @@ func (pe *PredictiveEngine) detectContextualPatterns() {
 
 // runPredictionGenerator creates predictions from patterns
 func (pe *PredictiveEngine) runPredictionGenerator() {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(pe.config.PredictionInterval)
 	defer ticker.Stop()
 
 	for {
@@ -330,7 +388,7 @@ func (pe *PredictiveEngine) generatePredictions() {
 	now := time.Now()
 
 	for _, pattern := range pe.patterns {
-		if pattern.Confidence < pe.confidenceThreshold {
+		if pattern.Confidence < pe.config.ConfidenceThreshold {
 			continue
 		}
 
@@ -339,10 +397,11 @@ func (pe *PredictiveEngine) generatePredictions() {
 		switch pattern.Type {
 		case PatternTemporal:
 			// Predict for next occurrence of hour
-			hour := pattern.Trigger["hour"].(int)
-			expectedTime = time.Date(now.Year(), now.Month(), now.Day(), hour, 0, 0, 0, now.Location())
-			if expectedTime.Before(now) {
-				expectedTime = expectedTime.Add(24 * time.Hour)
+			if hour, ok := pattern.Trigger["hour"].(int); ok {
+				expectedTime = time.Date(now.Year(), now.Month(), now.Day(), hour, 0, 0, 0, now.Location())
+				if expectedTime.Before(now) {
+					expectedTime = expectedTime.Add(24 * time.Hour)
+				}
 			}
 
 		case PatternSequential:
@@ -406,6 +465,9 @@ func (pe *PredictiveEngine) executePreComputation(prediction *Prediction) {
 		Msg("Pre-computing task")
 
 	// TODO: Implement actual task execution
+	// This would call the agent's task executor with the predicted task
+	// Example: result, err := pe.taskExecutor.Execute(prediction.TaskType, prediction.Context)
+	
 	// For now, simulate computation
 	time.Sleep(100 * time.Millisecond)
 
@@ -463,4 +525,33 @@ func (pe *PredictiveEngine) GetMetrics() map[string]any {
 		"avg_confidence":      math.Round(avgConfidence*100) / 100,
 		"learning_enabled":    pe.learningEnabled,
 	}
+}
+
+// Helper functions
+
+func getEnvInt(key string, defaultValue int) int {
+	if val := os.Getenv(key); val != "" {
+		if i, err := strconv.Atoi(val); err == nil {
+			return i
+		}
+	}
+	return defaultValue
+}
+
+func getEnvFloat(key string, defaultValue float64) float64 {
+	if val := os.Getenv(key); val != "" {
+		if f, err := strconv.ParseFloat(val, 64); err == nil {
+			return f
+		}
+	}
+	return defaultValue
+}
+
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	if val := os.Getenv(key); val != "" {
+		if d, err := time.ParseDuration(val); err == nil {
+			return d
+		}
+	}
+	return defaultValue
 }
