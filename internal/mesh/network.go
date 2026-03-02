@@ -11,10 +11,15 @@ import (
 
 // Network manages peer discovery and intelligent task routing across the local network.
 type Network struct {
-	mu         sync.RWMutex
-	localNode  *Node
-	peers      map[string]*Node
-	client     NodeClient
+	mu        sync.RWMutex
+	localNode *Node
+	peers     map[string]*Node
+	client    NodeClient
+}
+
+// NodeClient handles HTTP communication between peers
+type NodeClient interface {
+	Dispatch(ctx context.Context, targetAddress string, req *TaskRequest) (*TaskResponse, error)
 }
 
 // NewNetwork initializes the P2P Mesh engine.
@@ -65,7 +70,7 @@ func (n *Network) RouteTask(ctx context.Context, req *TaskRequest) (*TaskRespons
 	// Hardware routing logic
 	var bestPeer *Node
 
-	switch req.TaskType {
+	switch req.Type {
 	case "IMAGE_GEN", "LOCAL_LLM":
 		// These require a GPU. If local node lacks a GPU, find a peer that has one.
 		if !n.localNode.Profile.HasGPU {
@@ -88,12 +93,12 @@ func (n *Network) RouteTask(ctx context.Context, req *TaskRequest) (*TaskRespons
 	}
 
 	if bestPeer == nil {
-		log.Info().Str("task", req.TaskType).Msg("Executing task locally.")
+		log.Info().Str("task", req.Type).Msg("Executing task locally.")
 		return n.executeLocally(ctx, req)
 	}
 
 	log.Info().
-		Str("task", req.TaskType).
+		Str("task", req.Type).
 		Str("target_peer", bestPeer.ID).
 		Msg("🚀 Offloading heavy compute to remote peer in the mesh.")
 

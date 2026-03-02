@@ -23,9 +23,10 @@ import (
 )
 
 // DriftSignal represents a detected work drift pattern
+// Trigger auto-format workflow
 type DriftSignal struct {
-	Type        string    // stalled_task, missed_followup, context_loss, repetitive_failure
-	Severity    string    // low, medium, high
+	Type        string // stalled_task, missed_followup, context_loss, repetitive_failure
+	Severity    string // low, medium, high
 	Description string
 	Suggestion  string
 	DetectedAt  time.Time
@@ -178,8 +179,8 @@ func (d *DriftDetector) FormatReport() string {
 	var sb strings.Builder
 	sb.WriteString("⚠️ **NEXUS Drift Report**\n\n")
 	icons := map[string]string{
-		"stalled_task":      "🔴",
-		"missed_followup":   "🟡",
+		"stalled_task":       "🔴",
+		"missed_followup":    "🟡",
 		"repetitive_failure": "🔴",
 	}
 	for _, s := range d.signals {

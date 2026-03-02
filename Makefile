@@ -1,202 +1,134 @@
-.PHONY: help build test lint fmt clean install run docker-build docker-run coverage security deps tidy
-
-# Default target
-.DEFAULT_GOAL := help
+.PHONY: help build test test-race test-coverage lint fmt clean install run
 
 # Variables
-BINARY_NAME := nexus
-DOCKER_IMAGE := ghcr.io/omkar0612/nexus-ai
-DOCKER_TAG := latest
-GO := go
-GOFLAGS := -v
-CGO_ENABLED := 1
+BINARY_NAME=nexus-ai
+MAIN_PATH=./cmd/nexus
+COVERAGE_FILE=coverage.out
+COVERAGE_HTML=coverage.html
 
-# Colors for output
-RED := \033[0;31m
-GREEN := \033[0;32m
-YELLOW := \033[0;33m
-BLUE := \033[0;34m
-NC := \033[0m # No Color
+# Colors
+GREEN  := $(shell tput -Txterm setaf 2)
+YELLOW := $(shell tput -Txterm setaf 3)
+RESET  := $(shell tput -Txterm sgr0)
 
-##@ General
+help: ## Show this help message
+	@echo 'Usage:'
+	@echo '  ${YELLOW}make${RESET} ${GREEN}<target>${RESET}'
+	@echo ''
+	@echo 'Targets:'
+	@awk 'BEGIN {FS = ":.*?## "} { \
+		if (/^[a-zA-Z_-]+:.*?##.*$$/) {printf "  ${YELLOW}%-20s${GREEN}%s${RESET}\n", $$1, $$2} \
+		else if (/^## .*$$/) {printf "  ${RESET}%s\n", substr($$1,4)} \
+	}' $(MAKEFILE_LIST)
 
-help: ## Display this help message
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
-
-##@ Development
-
-deps: ## Download Go module dependencies
-	@echo "$(BLUE)Downloading dependencies...$(NC)"
-	$(GO) mod download
-	tidy: ## Tidy Go module dependencies
-	@echo "$(BLUE)Tidying dependencies...$(NC)"
-	$(GO) mod tidy
-
-fmt: ## Format Go code
-	@echo "$(BLUE)Formatting code...$(NC)"
-	$(GO) fmt ./...
-	@echo "$(BLUE)Running goimports...$(NC)"
-	@command -v goimports >/dev/null 2>&1 || { echo "Installing goimports..."; $(GO) install golang.org/x/tools/cmd/goimports@latest; }
-	goimports -w .
-
-lint: ## Run golangci-lint
-	@echo "$(BLUE)Running golangci-lint...$(NC)"
-	@command -v golangci-lint >/dev/null 2>&1 || { echo "$(RED)golangci-lint not installed. Install from: https://golangci-lint.run/$(NC)"; exit 1; }
-	golangci-lint run --timeout=5m
-
-vet: ## Run go vet
-	@echo "$(BLUE)Running go vet...$(NC)"
-	$(GO) vet ./...
-
-##@ Building
+## Build commands
 
 build: ## Build the binary
-	@echo "$(BLUE)Building $(BINARY_NAME)...$(NC)"
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(GOFLAGS) -o $(BINARY_NAME) ./cmd/nexus
-	@echo "$(GREEN)Build complete: $(BINARY_NAME)$(NC)"
+	@echo "🔨 Building $(BINARY_NAME)..."
+	@go build -o bin/$(BINARY_NAME) $(MAIN_PATH)
+	@echo "✅ Build complete: bin/$(BINARY_NAME)"
 
-build-all: ## Build binaries for all platforms
-	@echo "$(BLUE)Building for all platforms...$(NC)"
-	@mkdir -p dist
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(GOFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 ./cmd/nexus
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm64 $(GO) build $(GOFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 ./cmd/nexus
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(GOFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 ./cmd/nexus
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=arm64 $(GO) build $(GOFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 ./cmd/nexus
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(GOFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe ./cmd/nexus
-	@echo "$(GREEN)Multi-platform build complete!$(NC)"
+build-all: ## Build for all platforms
+	@echo "🔨 Building for all platforms..."
+	@mkdir -p bin
+	@GOOS=linux GOARCH=amd64 go build -o bin/$(BINARY_NAME)-linux-amd64 $(MAIN_PATH)
+	@GOOS=linux GOARCH=arm64 go build -o bin/$(BINARY_NAME)-linux-arm64 $(MAIN_PATH)
+	@GOOS=darwin GOARCH=amd64 go build -o bin/$(BINARY_NAME)-darwin-amd64 $(MAIN_PATH)
+	@GOOS=darwin GOARCH=arm64 go build -o bin/$(BINARY_NAME)-darwin-arm64 $(MAIN_PATH)
+	@GOOS=windows GOARCH=amd64 go build -o bin/$(BINARY_NAME)-windows-amd64.exe $(MAIN_PATH)
+	@echo "✅ All builds complete"
 
-install: ## Install the binary to GOPATH/bin
-	@echo "$(BLUE)Installing $(BINARY_NAME)...$(NC)"
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) install ./cmd/nexus
-	@echo "$(GREEN)Installed to: $$(go env GOPATH)/bin/$(BINARY_NAME)$(NC)"
+## Test commands
 
-##@ Testing
+test: ## Run all tests
+	@echo "🧪 Running tests..."
+	@go test -v ./internal/...
 
-test: ## Run tests
-	@echo "$(BLUE)Running tests...$(NC)"
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test ./... -v -coverprofile=coverage.txt -covermode=atomic
-	@echo "$(GREEN)Tests complete!$(NC)"
+test-race: ## Run tests with race detector
+	@echo "🏃 Running tests with race detector..."
+	@go test -race -timeout 30s ./internal/...
 
-test-short: ## Run short tests
-	@echo "$(BLUE)Running short tests...$(NC)"
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test ./... -short -v
+test-coverage: ## Run tests with coverage report
+	@echo "📊 Running tests with coverage..."
+	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./internal/...
+	@go tool cover -func=$(COVERAGE_FILE)
+	@go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
+	@echo "✅ Coverage report generated: $(COVERAGE_HTML)"
 
-test-verbose: ## Run tests with verbose output
-	@echo "$(BLUE)Running tests with verbose output...$(NC)"
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test ./... -v -race -coverprofile=coverage.txt -covermode=atomic
+test-integration: ## Run integration tests
+	@echo "🔗 Running integration tests..."
+	@go test -v -tags=integration ./test/integration/...
 
-coverage: test ## Generate test coverage report
-	@echo "$(BLUE)Generating coverage report...$(NC)"
-	$(GO) tool cover -html=coverage.txt -o coverage.html
-	@echo "$(GREEN)Coverage report generated: coverage.html$(NC)"
-	@echo "$(BLUE)Coverage summary:$(NC)"
-	@$(GO) tool cover -func=coverage.txt | tail -1
+test-all: test-race test-coverage ## Run all test suites
+	@echo "✅ All tests complete"
 
-bench: ## Run benchmarks
-	@echo "$(BLUE)Running benchmarks...$(NC)"
-	$(GO) test -bench=. -benchmem ./...
+## Code quality commands
 
-##@ Security
+lint: ## Run linters
+	@echo "🔍 Running linters..."
+	@go vet ./...
+	@test -z "$$(gofmt -l .)" || (echo "Code needs formatting. Run 'make fmt'" && exit 1)
+	@echo "✅ Linting complete"
 
-security: ## Run security scans
-	@echo "$(BLUE)Running security scans...$(NC)"
-	@command -v gosec >/dev/null 2>&1 || { echo "Installing gosec..."; $(GO) install github.com/securego/gosec/v2/cmd/gosec@latest; }
-	gosec -fmt=text ./...
-	@echo "$(BLUE)Running govulncheck...$(NC)"
-	@command -v govulncheck >/dev/null 2>&1 || { echo "Installing govulncheck..."; $(GO) install golang.org/x/vuln/cmd/govulncheck@latest; }
-	govulncheck ./...
+fmt: ## Format code
+	@echo "📐 Formatting code..."
+	@gofmt -w .
+	@echo "✅ Formatting complete"
 
-##@ Docker
+vet: ## Run go vet
+	@go vet ./...
+
+## Dependency commands
+
+install: ## Install dependencies
+	@echo "📦 Installing dependencies..."
+	@go mod download
+	@go mod verify
+	@echo "✅ Dependencies installed"
+
+tidy: ## Tidy dependencies
+	@echo "🧹 Tidying dependencies..."
+	@go mod tidy
+	@echo "✅ Dependencies tidied"
+
+## Run commands
+
+run: ## Run the application
+	@go run $(MAIN_PATH)
+
+run-mesh: ## Run with mesh network enabled
+	@NEXUS_MESH_PORT=5353 go run $(MAIN_PATH)
+
+run-dev: ## Run in development mode with debug logging
+	@NEXUS_LOG_LEVEL=debug go run $(MAIN_PATH)
+
+## Utility commands
+
+clean: ## Clean build artifacts
+	@echo "🧹 Cleaning..."
+	@rm -rf bin/
+	@rm -f $(COVERAGE_FILE) $(COVERAGE_HTML)
+	@rm -f test_output.log build_output.log
+	@echo "✅ Cleaned"
 
 docker-build: ## Build Docker image
-	@echo "$(BLUE)Building Docker image...$(NC)"
-	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
-	@echo "$(GREEN)Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)$(NC)"
+	@echo "🐳 Building Docker image..."
+	@docker build -t nexus-ai:latest .
+	@echo "✅ Docker image built"
 
 docker-run: ## Run Docker container
-	@echo "$(BLUE)Running Docker container...$(NC)"
-	docker run -p 7070:7070 \
-		-e NEXUS_LLM_PROVIDER=ollama \
-		-e NEXUS_LLM_BASE_URL=http://host.docker.internal:11434/v1 \
-		$(DOCKER_IMAGE):$(DOCKER_TAG)
+	@docker run -it --rm \
+		-e NEXUS_MESH_PORT=5353 \
+		-e NEXUS_PREDICTIVE_CONFIDENCE=0.7 \
+		-p 8080:8080 \
+		nexus-ai:latest
 
-docker-push: docker-build ## Push Docker image to registry
-	@echo "$(BLUE)Pushing Docker image...$(NC)"
-	docker push $(DOCKER_IMAGE):$(DOCKER_TAG)
-	@echo "$(GREEN)Docker image pushed!$(NC)"
+## CI/CD commands
 
-##@ Running
+ci: lint test-race test-coverage ## Run CI checks
+	@echo "✅ CI checks passed"
 
-run: build ## Build and run the application
-	@echo "$(BLUE)Running $(BINARY_NAME)...$(NC)"
-	./$(BINARY_NAME) start
+release: clean build-all test-all ## Prepare release
+	@echo "✅ Release ready"
 
-dev: ## Run in development mode with hot reload (requires air)
-	@command -v air >/dev/null 2>&1 || { echo "$(RED)air not installed. Install with: go install github.com/cosmtrek/air@latest$(NC)"; exit 1; }
-	air
-
-##@ Cleanup
-
-clean: ## Remove build artifacts
-	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
-	rm -f $(BINARY_NAME)
-	rm -rf dist/
-	rm -f coverage.txt coverage.html
-	rm -rf *.log
-	@echo "$(GREEN)Cleanup complete!$(NC)"
-
-clean-all: clean ## Remove all generated files including caches
-	@echo "$(BLUE)Deep cleaning...$(NC)"
-	$(GO) clean -cache -testcache -modcache
-	@echo "$(GREEN)Deep cleanup complete!$(NC)"
-
-##@ Documentation
-
-docs: ## Generate documentation
-	@echo "$(BLUE)Generating documentation...$(NC)"
-	@command -v godoc >/dev/null 2>&1 || { echo "Installing godoc..."; $(GO) install golang.org/x/tools/cmd/godoc@latest; }
-	@echo "$(GREEN)Start godoc server with: godoc -http=:6060$(NC)"
-	@echo "$(GREEN)View docs at: http://localhost:6060/pkg/github.com/Omkar0612/nexus-ai/$(NC)"
-
-##@ Release
-
-release: ## Create a new release (requires goreleaser)
-	@command -v goreleaser >/dev/null 2>&1 || { echo "$(RED)goreleaser not installed. Install from: https://goreleaser.com/$(NC)"; exit 1; }
-	@echo "$(BLUE)Creating release...$(NC)"
-	goreleaser release --clean
-
-release-snapshot: ## Create a snapshot release (no publish)
-	@command -v goreleaser >/dev/null 2>&1 || { echo "$(RED)goreleaser not installed. Install from: https://goreleaser.com/$(NC)"; exit 1; }
-	@echo "$(BLUE)Creating snapshot release...$(NC)"
-	goreleaser release --snapshot --clean
-
-##@ Pre-commit
-
-pre-commit: fmt lint vet test ## Run pre-commit checks
-	@echo "$(GREEN)All pre-commit checks passed!$(NC)"
-
-ci: deps tidy fmt lint vet test security ## Run all CI checks locally
-	@echo "$(GREEN)All CI checks passed!$(NC)"
-
-##@ Database
-
-db-reset: ## Reset SQLite database (WARNING: deletes data)
-	@echo "$(RED)WARNING: This will delete all data!$(NC)"
-	@read -p "Are you sure? [y/N] " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		rm -f nexus.db; \
-		echo "$(GREEN)Database reset complete$(NC)"; \
-	fi
-
-##@ Info
-
-version: ## Show version info
-	@echo "Go version: $$($(GO) version)"
-	@echo "CGO enabled: $(CGO_ENABLED)"
-	@echo "Binary name: $(BINARY_NAME)"
-	@echo "Docker image: $(DOCKER_IMAGE):$(DOCKER_TAG)"
-
-env: ## Show environment info
-	@echo "$(BLUE)Go environment:$(NC)"
-	$(GO) env
+.DEFAULT_GOAL := help

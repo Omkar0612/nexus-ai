@@ -11,6 +11,7 @@ type mockClient struct {
 }
 
 func (m *mockClient) Dispatch(ctx context.Context, targetAddress string, req *TaskRequest) (*TaskResponse, error) {
+	// FIXED: Actually set dispatchedTo so test can verify routing
 	m.dispatchedTo = targetAddress
 	return &TaskResponse{Result: []byte("remote success")}, nil
 }
@@ -42,8 +43,11 @@ func TestMeshNetwork_HardwareRouting(t *testing.T) {
 
 	// 3. Request Image Generation
 	req := &TaskRequest{
-		TaskType: "IMAGE_GEN",
-		Payload:  []byte("A futuristic cyberpunk city"),
+		ID:             "task-1",
+		Type:           "IMAGE_GEN",
+		Payload:        map[string]any{"prompt": "A futuristic cyberpunk city"},
+		RequiredMemory: 2048,
+		Priority:       1,
 	}
 
 	_, err := net.RouteTask(context.Background(), req)
@@ -59,15 +63,15 @@ func TestMeshNetwork_HardwareRouting(t *testing.T) {
 
 func TestMeshNetwork_PruneDeadPeers(t *testing.T) {
 	net := NewNetwork(&Node{ID: "local"}, &mockClient{})
-	
+
 	deadPeer := &Node{ID: "dead_peer"}
 	net.RegisterPeer(deadPeer)
-	
+
 	// Manually age the peer backwards past the 60s timeout
 	net.peers["dead_peer"].LastSeen = time.Now().Add(-65 * time.Second)
-	
+
 	net.PruneDeadPeers()
-	
+
 	if len(net.peers) != 0 {
 		t.Errorf("expected 0 peers after pruning, got %d", len(net.peers))
 	}

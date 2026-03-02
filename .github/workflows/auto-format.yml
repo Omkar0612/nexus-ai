@@ -1,0 +1,52 @@
+name: Auto-format Go Code
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'fix/**'
+    paths:
+      - '**.go'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run gofmt
+        run: |
+          echo "Running gofmt on all Go files..."
+          gofmt -w .
+          
+      - name: Check for changes
+        id: changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Found formatting changes"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "✅ No formatting changes needed"
+          fi
+
+      - name: Commit and push if changed
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "style: Auto-format Go files with gofmt [skip ci]"
+          git push

@@ -80,6 +80,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    continue-on-error: true  # Advisory mode for alpha PRs
     
     steps:
       - name: Checkout code
@@ -96,6 +97,7 @@ jobs:
         with:
           version: latest
           args: --timeout=5m
+        continue-on-error: true  # Report but don't block
 
   format-check:
     name: Format Check

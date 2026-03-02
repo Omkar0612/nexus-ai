@@ -11,11 +11,11 @@ import (
 	"github.com/Omkar0612/nexus-ai/internal/router"
 	"github.com/Omkar0612/nexus-ai/internal/types"
 	"github.com/Omkar0612/nexus-ai/internal/webui"
-	
+
 	// v1.8 feature imports
-	"github.com/Omkar0612/nexus-ai/internal/routing"
 	"github.com/Omkar0612/nexus-ai/internal/mesh"
-	
+	"github.com/Omkar0612/nexus-ai/internal/routing"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -67,7 +67,7 @@ func runStart(cmd *cobra.Command, _ []string) error {
 		TimeoutSec: 120,
 	}
 	r := router.New(llmCfg)
-	
+
 	// Create context for daemon lifecycle
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -87,7 +87,7 @@ func runStart(cmd *cobra.Command, _ []string) error {
 	}
 	meshNet := mesh.NewNetwork(localNode, nil) // Transport client injection pending
 	discovery := mesh.NewDiscovery(meshNet, localNode)
-	
+
 	// Start mDNS broadcast (errors logged but non-fatal if offline)
 	if err := discovery.Start(ctx, port); err != nil {
 		log.Warn().Err(err).Msg("Mesh discovery disabled (mDNS failed)")
@@ -111,7 +111,7 @@ func runStart(cmd *cobra.Command, _ []string) error {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	
+
 	log.Info().Msg("NEXUS shutting down gracefully")
 	return nil
 }

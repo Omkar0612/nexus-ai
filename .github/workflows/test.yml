@@ -1,0 +1,130 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.24.0', '1.23.0']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+    - name: Install dependencies
+      run: |
+        go mod download
+        go mod verify
+
+    - name: Run go vet
+      run: go vet ./...
+
+    - name: Check formatting
+      run: |
+        if [ -n "$(gofmt -l .)" ]; then
+          echo "Code is not formatted. Please run 'gofmt -w .'"
+          gofmt -l .
+          exit 1
+        fi
+
+    - name: Run tests
+      env:
+        NEXUS_MESH_PORT: 15353
+        NEXUS_PREDICTIVE_CONFIDENCE: 0.7
+        NEXUS_LOG_LEVEL: error
+      run: |
+        go test -v -race -timeout 30s ./internal/mesh ./internal/predictive
+
+    - name: Run tests with coverage
+      env:
+        NEXUS_MESH_PORT: 15353
+        NEXUS_PREDICTIVE_CONFIDENCE: 0.7
+        NEXUS_LOG_LEVEL: error
+      run: |
+        go test -coverprofile=coverage.out -covermode=atomic ./internal/mesh ./internal/predictive
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Test build
+      run: |
+        go build -o /tmp/nexus-ai ./cmd/nexus
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.0'
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: --timeout=5m
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.0'
+
+    - name: Build
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+      run: |
+        go build -o bin/nexus-ai-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/nexus
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nexus-ai-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: bin/*

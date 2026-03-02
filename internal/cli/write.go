@@ -98,8 +98,8 @@ func runWriteRewrite(cmd *cobra.Command, _ []string) error {
 // -- summarise --
 
 var writeSummariseCmd = &cobra.Command{
-	Use:   "summarise",
-	Short: "Summarise text to a target word count",
+	Use:     "summarise",
+	Short:   "Summarise text to a target word count",
 	Example: `  nexus write summarise --file meeting-notes.txt --words 100`,
 	RunE:    runWriteSummarise,
 }

@@ -15,7 +15,7 @@ import (
 type Provider string
 
 const (
-	ProviderGoogle Provider = "google"
+	ProviderGoogle  Provider = "google"
 	ProviderOutlook Provider = "outlook"
 	ProviderICS     Provider = "ics"
 )
@@ -37,9 +37,9 @@ type Event struct {
 
 // ConflictResult describes a detected scheduling conflict.
 type ConflictResult struct {
-	EventA   Event
-	EventB   Event
-	Overlap  time.Duration
+	EventA  Event
+	EventB  Event
+	Overlap time.Duration
 }
 
 // Agent is the calendar agent.

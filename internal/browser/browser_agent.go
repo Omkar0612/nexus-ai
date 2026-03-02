@@ -82,21 +82,21 @@ func DefaultConfig() BrowserConfig {
 		BlockedHosts: []string{
 			// IPv4 private/loopback
 			"localhost",
-			"127.",         // 127.0.0.0/8 loopback
-			"0.",           // 0.0.0.0/8
-			"10.",          // 10.0.0.0/8 private
-			"172.16.",      // 172.16.0.0/12 private
-			"192.168.",     // 192.168.0.0/16 private
-			"169.254.",     // link-local + AWS metadata endpoint
+			"127.",     // 127.0.0.0/8 loopback
+			"0.",       // 0.0.0.0/8
+			"10.",      // 10.0.0.0/8 private
+			"172.16.",  // 172.16.0.0/12 private
+			"192.168.", // 192.168.0.0/16 private
+			"169.254.", // link-local + AWS metadata endpoint
 			// IPv6 loopback and link-local
-			"[::1]",        // IPv6 loopback
-			"[::]",         // unspecified
-			"[fe80",        // IPv6 link-local
-			"[fc",          // IPv6 unique local
-			"[fd",          // IPv6 unique local
+			"[::1]", // IPv6 loopback
+			"[::]",  // unspecified
+			"[fe80", // IPv6 link-local
+			"[fc",   // IPv6 unique local
+			"[fd",   // IPv6 unique local
 			// Cloud metadata endpoints (SSRF IMDS exfil)
-			"169.254.169.254",       // AWS/Azure/GCP IMDS
-			"100.100.100.200",       // Alibaba Cloud ECS metadata
+			"169.254.169.254",          // AWS/Azure/GCP IMDS
+			"100.100.100.200",          // Alibaba Cloud ECS metadata
 			"metadata.google.internal", // GCP metadata
 			"metadata.azure.internal",  // Azure metadata
 		},

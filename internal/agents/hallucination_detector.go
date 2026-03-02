@@ -50,7 +50,7 @@ type Claim struct {
 type HallucinationReport struct {
 	Response        string
 	Claims          []Claim
-	OverallScore    float64  // 0.0–1.0
+	OverallScore    float64 // 0.0–1.0
 	Tag             VerificationTag
 	FlaggedCount    int
 	Contradictions  []string
@@ -62,14 +62,14 @@ type HallucinationReport struct {
 
 // HallucinationDetector analyses LLM responses for reliability
 type HallucinationDetector struct {
-	retryThreshold  float64 // score below this triggers retry suggestion
-	memoryContext   []string // recent verified facts from memory
-	urlPattern      *regexp.Regexp
-	datePattern     *regexp.Regexp
-	numberPattern   *regexp.Regexp
-	hyperboleWords  []string
-	hedgeWords      []string
-	certaintyWords  []string
+	retryThreshold float64  // score below this triggers retry suggestion
+	memoryContext  []string // recent verified facts from memory
+	urlPattern     *regexp.Regexp
+	datePattern    *regexp.Regexp
+	numberPattern  *regexp.Regexp
+	hyperboleWords []string
+	hedgeWords     []string
+	certaintyWords []string
 }
 
 // NewHallucinationDetector creates a detector with default settings
@@ -96,8 +96,8 @@ func (h *HallucinationDetector) LoadMemoryContext(facts []string) {
 // Analyse runs hallucination detection on an LLM response
 func (h *HallucinationDetector) Analyse(response string) *HallucinationReport {
 	report := &HallucinationReport{
-		Response:    response,
-		AnalysedAt:  time.Now(),
+		Response:   response,
+		AnalysedAt: time.Now(),
 	}
 
 	claims := h.extractClaims(response)

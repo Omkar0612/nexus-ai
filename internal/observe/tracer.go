@@ -25,24 +25,24 @@ type Trace struct {
 type TraceStatus string
 
 const (
-	StatusRunning  TraceStatus = "RUNNING"
-	StatusSuccess  TraceStatus = "SUCCESS"
-	StatusFailed   TraceStatus = "FAILED"
-	StatusKilled   TraceStatus = "KILLED"
-	StatusLooped   TraceStatus = "HALTED_LOOP_DETECTED"
+	StatusRunning TraceStatus = "RUNNING"
+	StatusSuccess TraceStatus = "SUCCESS"
+	StatusFailed  TraceStatus = "FAILED"
+	StatusKilled  TraceStatus = "KILLED"
+	StatusLooped  TraceStatus = "HALTED_LOOP_DETECTED"
 )
 
 // TraceStep represents a single atomic action in the agent's reasoning chain.
 type TraceStep struct {
-	StepID      int
-	Timestamp   time.Time
-	Action      string // e.g. "tool_call", "llm_reasoning", "memory_lookup"
-	ToolName    string
-	ToolArgs    map[string]interface{}
-	ToolOutput  string
-	LatencyMs   int64
-	Success     bool
-	RetryCount  int
+	StepID     int
+	Timestamp  time.Time
+	Action     string // e.g. "tool_call", "llm_reasoning", "memory_lookup"
+	ToolName   string
+	ToolArgs   map[string]interface{}
+	ToolOutput string
+	LatencyMs  int64
+	Success    bool
+	RetryCount int
 }
 
 // Tracer collects structured logs for agent execution timelines.

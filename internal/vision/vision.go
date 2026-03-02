@@ -20,9 +20,9 @@ import (
 type Backend string
 
 const (
-	BackendOllama   Backend = "ollama"    // local, free, private
-	BackendTogether Backend = "together"  // free $25 credits
-	BackendGroq     Backend = "groq"      // groq vision (llava)
+	BackendOllama   Backend = "ollama"   // local, free, private
+	BackendTogether Backend = "together" // free $25 credits
+	BackendGroq     Backend = "groq"     // groq vision (llava)
 )
 
 // AnalysisResult holds the vision model's response.
@@ -151,13 +151,13 @@ func (a *Agent) analyseOllama(ctx context.Context, imageData []byte, prompt stri
 // --- Together AI backend ---
 
 type togetherRequest struct {
-	Model    string             `json:"model"`
-	Messages []togetherMessage  `json:"messages"`
+	Model     string            `json:"model"`
+	Messages  []togetherMessage `json:"messages"`
 	MaxTokens int               `json:"max_tokens"`
 }
 
 type togetherMessage struct {
-	Role    string        `json:"role"`
+	Role    string            `json:"role"`
 	Content []togetherContent `json:"content"`
 }
 
@@ -189,7 +189,9 @@ func (a *Agent) analyseTogether(ctx context.Context, imageData []byte, prompt st
 			{
 				Role: "user",
 				Content: []togetherContent{
-					{Type: "image_url", ImageURL: &struct{ URL string `json:"url"` }{URL: dataURL}},
+					{Type: "image_url", ImageURL: &struct {
+						URL string `json:"url"`
+					}{URL: dataURL}},
 					{Type: "text", Text: prompt},
 				},
 			},

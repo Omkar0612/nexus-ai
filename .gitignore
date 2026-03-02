@@ -1,46 +1,58 @@
-# Environment and secrets
-.env
-.env.*
-.secrets
-secrets.*
-config/local.*
-
-# Certificates and private keys — NEVER commit these
-*.pem
-*.key
-*.crt
-*.cer
-*.p12
-*.pfx
-
-# NEXUS config files (may contain API keys)
-nexus.toml
-nexus.yaml
-nexus.yml
-
-# SQLite vault database
-*.db
-*.db-shm
-*.db-wal
-
-# Build artifacts
+# Binaries
 bin/
-dist/
-nexus
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/nexus-ai
+/nexus
 
-# Logs
-*.log
+# Test binary, built with `go test -c`
+*.test
 
-# Python (AudioCraft bridge)
-__pycache__/
-*.pyc
-.venv/
+# Output of the go coverage tool
+*.out
+coverage.html
+coverage.out
+test_output.log
+build_output.log
 
-# macOS
-.DS_Store
+# Dependency directories
+vendor/
 
-# Editor
+# Go workspace file
+go.work
+
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Build artifacts
+dist/
+build/

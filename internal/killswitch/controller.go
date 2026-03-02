@@ -19,12 +19,12 @@ type Controller struct {
 
 // Session represents an active agent execution that can be paused or killed.
 type Session struct {
-	ID              string
-	AgentName       string
-	StartTime       time.Time
-	State           SessionState
-	CredentialIDs   []string
-	PendingActions  []RecoverableAction
+	ID             string
+	AgentName      string
+	StartTime      time.Time
+	State          SessionState
+	CredentialIDs  []string
+	PendingActions []RecoverableAction
 }
 
 type SessionState string
@@ -37,13 +37,13 @@ const (
 
 // RecoverableAction represents a single agent action that can be rolled back.
 type RecoverableAction struct {
-	ID            string
-	ToolName      string
-	TargetSystem  string
-	Payload       map[string]interface{}
-	ExecutedAt    time.Time
+	ID             string
+	ToolName       string
+	TargetSystem   string
+	Payload        map[string]interface{}
+	ExecutedAt     time.Time
 	IdempotencyKey string
-	UndoScript    string // Optional: rollback logic
+	UndoScript     string // Optional: rollback logic
 }
 
 // CredentialStore defines the interface for revoking agent credentials.
@@ -88,7 +88,7 @@ func (c *Controller) HardStop(ctx context.Context, sessionID string, reason stri
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	session, exists := c.activeSessions[sessionID]
+	sess, exists := c.activeSessions[sessionID]
 	if !exists {
 		return fmt.Errorf("session %s not found", sessionID)
 	}
@@ -96,12 +96,12 @@ func (c *Controller) HardStop(ctx context.Context, sessionID string, reason stri
 	log.Warn().Str("session_id", sessionID).Str("reason", reason).Msg("🛑 HARD STOP triggered")
 
 	// 1. Revoke all API credentials
-	if err := c.credentialVault.RevokeAll(session.CredentialIDs); err != nil {
+	if err := c.credentialVault.RevokeAll(sess.CredentialIDs); err != nil {
 		return fmt.Errorf("failed to revoke credentials: %w", err)
 	}
 
 	// 2. Mark session as killed
-	session.State = StateKilled
+	sess.State = StateKilled
 
 	// 3. Trigger post-mortem (async)
 	go c.runPostMortem(sessionID, reason)
@@ -114,12 +114,12 @@ func (c *Controller) SoftPause(sessionID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	session, exists := c.activeSessions[sessionID]
+	sess, exists := c.activeSessions[sessionID]
 	if !exists {
 		return fmt.Errorf("session %s not found", sessionID)
 	}
 
-	session.State = StatePaused
+	sess.State = StatePaused
 	log.Info().Str("session_id", sessionID).Msg("⏸️ Session paused (state preserved)")
 	return nil
 }
@@ -127,7 +127,7 @@ func (c *Controller) SoftPause(sessionID string) error {
 // Layer 3: Transactional Rollback — Undo agent actions idempotently.
 func (c *Controller) Rollback(ctx context.Context, sessionID string) error {
 	c.mu.RLock()
-	session, exists := c.activeSessions[sessionID]
+	_, exists := c.activeSessions[sessionID]
 	c.mu.RUnlock()
 
 	if !exists {

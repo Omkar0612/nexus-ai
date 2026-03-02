@@ -4,7 +4,7 @@ import "time"
 
 // Message is a single conversation turn
 type Message struct {
-	Role      string    `json:"role"`      // user, assistant, system
+	Role      string    `json:"role"` // user, assistant, system
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	AgentUsed string    `json:"agent_used,omitempty"`
@@ -25,13 +25,13 @@ type AgentResult struct {
 
 // Config is the top-level NEXUS configuration
 type Config struct {
-	UserID   string         `toml:"user_id"   mapstructure:"user_id"`
-	DataDir  string         `toml:"data_dir"  mapstructure:"data_dir"`
-	LogLevel string         `toml:"log_level" mapstructure:"log_level"`
-	LLM      LLMConfig      `toml:"llm"       mapstructure:"llm"`
-	Memory   MemoryConfig   `toml:"memory"    mapstructure:"memory"`
-	Gateway  GatewayConfig  `toml:"gateway"   mapstructure:"gateway"`
-	Agents   AgentsConfig   `toml:"agents"    mapstructure:"agents"`
+	UserID   string        `toml:"user_id"   mapstructure:"user_id"`
+	DataDir  string        `toml:"data_dir"  mapstructure:"data_dir"`
+	LogLevel string        `toml:"log_level" mapstructure:"log_level"`
+	LLM      LLMConfig     `toml:"llm"       mapstructure:"llm"`
+	Memory   MemoryConfig  `toml:"memory"    mapstructure:"memory"`
+	Gateway  GatewayConfig `toml:"gateway"   mapstructure:"gateway"`
+	Agents   AgentsConfig  `toml:"agents"    mapstructure:"agents"`
 }
 
 // LLMConfig holds LLM provider settings
@@ -55,13 +55,13 @@ type MemoryConfig struct {
 
 // GatewayConfig holds API gateway settings
 type GatewayConfig struct {
-	Port    int    `toml:"port"    mapstructure:"port"`
-	Host    string `toml:"host"    mapstructure:"host"`
-	APIKey  string `toml:"api_key" mapstructure:"api_key"`
+	Port   int    `toml:"port"    mapstructure:"port"`
+	Host   string `toml:"host"    mapstructure:"host"`
+	APIKey string `toml:"api_key" mapstructure:"api_key"`
 }
 
 // AgentsConfig holds agent-level settings
 type AgentsConfig struct {
-	TimeoutSec       int  `toml:"timeout_sec"        mapstructure:"timeout_sec"`
-	HumanInLoopRisk  bool `toml:"human_in_loop_high_risk" mapstructure:"human_in_loop_high_risk"`
+	TimeoutSec      int  `toml:"timeout_sec"        mapstructure:"timeout_sec"`
+	HumanInLoopRisk bool `toml:"human_in_loop_high_risk" mapstructure:"human_in_loop_high_risk"`
 }

@@ -23,9 +23,9 @@ import (
 type Document struct {
 	ID        int64
 	Content   string
-	Source    string    // e.g. "conversation", "notes", "email", "kb"
+	Source    string // e.g. "conversation", "notes", "email", "kb"
 	CreatedAt time.Time
-	Score     float64   // populated on search results
+	Score     float64 // populated on search results
 }
 
 // Store manages the vector store.

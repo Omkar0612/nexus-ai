@@ -14,14 +14,14 @@ type LLMClient interface {
 }
 
 // LiquidContext Engine monitors episodic memory. When the context window reaches
-// a critical threshold (e.g., 8000 tokens), it "dreams" in the background, 
+// a critical threshold (e.g., 8000 tokens), it "dreams" in the background,
 // semantically clustering old episodes and compressing them into dense Concepts.
 type LiquidContext struct {
-	db             Storage
-	llm            LLMClient
-	threshold      int // Max tokens before consolidation triggers
-	ticker         *time.Ticker
-	quit           chan struct{}
+	db        Storage
+	llm       LLMClient
+	threshold int // Max tokens before consolidation triggers
+	ticker    *time.Ticker
+	quit      chan struct{}
 }
 
 // NewLiquidContext initializes the memory consolidator.
@@ -129,6 +129,6 @@ Output a highly compressed, factual summary (a "Concept").`
 
 	log.Info().
 		Int("episodes_compressed", len(oldEpisodes)).
-		Int("tokens_freed", tokensSaved - concept.Tokens).
+		Int("tokens_freed", tokensSaved-concept.Tokens).
 		Msg("✅ Liquid Context successfully consolidated memory.")
 }

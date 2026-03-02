@@ -32,11 +32,11 @@ func (a *AgentModule) Name() string {
 // NewRuntime initializes the zero-dependency Wasm runtime.
 func NewRuntime(ctx context.Context) *Runtime {
 	r := wazero.NewRuntime(ctx)
-	
+
 	// Instantiate WASI to allow Wasm modules to use basic features (like writing to console).
 	// We do NOT map the filesystem or network by default (Zero-Trust sandbox).
 	wasi_snapshot_preview1.MustInstantiate(ctx, r)
-	
+
 	// Export the NEXUS Host ABI
 	_, err := r.NewHostModuleBuilder("nexus_env").
 		NewFunctionBuilder().
@@ -66,7 +66,7 @@ func (r *Runtime) LoadAgent(name string, wasmBytes []byte, stdout io.Writer) (*A
 
 	mod, err := r.runtime.InstantiateWithConfig(r.ctx, wasmBytes, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to instantiate wasm agent %s: %w", err)
+		return nil, fmt.Errorf("failed to instantiate wasm agent %s: %w", name, err)
 	}
 
 	return &AgentModule{
@@ -86,7 +86,7 @@ func (a *AgentModule) Execute(ctx context.Context, input string) (string, error)
 	if runFunc == nil {
 		return "", fmt.Errorf("agent %s does not export a 'run' function", a.name)
 	}
-	
+
 	// Fast path: if the agent doesn't take args, just run it
 	if malloc == nil || len(input) == 0 {
 		_, err := runFunc.Call(ctx)

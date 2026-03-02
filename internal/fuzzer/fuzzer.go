@@ -11,11 +11,11 @@ import (
 
 // Report contains the results of an adversarial fuzzing campaign.
 type Report struct {
-	TargetAgent   string
-	TestsRun      int
+	TargetAgent     string
+	TestsRun        int
 	Vulnerabilities int
-	FailedPayloads []string
-	Passed        bool
+	FailedPayloads  []string
+	Passed          bool
 }
 
 // Engine acts as the "Attacker Agent". It takes a compiled Wasm module from the
@@ -47,9 +47,9 @@ func (e *Engine) Fuzz(ctx context.Context, agent *wasm.AgentModule) *Report {
 	for _, payload := range payloads {
 		// Enforce strict timeout for each fuzzing attempt to catch infinite loops
 		fuzzCtx, cancel := context.WithTimeout(ctx, e.timeout)
-		
+
 		log.Debug().Str("vector", payload.Name).Msg("Injecting attack payload...")
-		
+
 		_, err := agent.Execute(fuzzCtx, payload.Input)
 		cancel()
 

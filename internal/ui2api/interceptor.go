@@ -76,12 +76,12 @@ func (i *Interceptor) ProcessTraffic(ctx context.Context, appName string, rawHAR
 		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 			secretKey := fmt.Sprintf("%s_API_TOKEN", strings.ToUpper(appName))
-			
+
 			log.Info().Str("app", appName).Msg("Discovered undocumented Bearer Token! Securing in Vault.")
 			if err := i.vault.StoreSecret(ctx, secretKey, token); err != nil {
 				return nil, fmt.Errorf("failed to secure token in vault: %w", err)
 			}
-			
+
 			// Redact the token from the log we send to the LLM to prevent leaking secrets to Groq/OpenAI
 			entry.Request.Headers["Authorization"] = "Bearer [REDACTED_SECURED_IN_VAULT]"
 		}
@@ -90,7 +90,7 @@ func (i *Interceptor) ProcessTraffic(ctx context.Context, appName string, rawHAR
 		if cookieHeader != "" {
 			secretKey := fmt.Sprintf("%s_SESSION_COOKIE", strings.ToUpper(appName))
 			log.Info().Str("app", appName).Msg("Discovered Session Cookie! Securing in Vault.")
-			
+
 			if err := i.vault.StoreSecret(ctx, secretKey, cookieHeader); err != nil {
 				return nil, fmt.Errorf("failed to secure cookie in vault: %w", err)
 			}

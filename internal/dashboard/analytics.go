@@ -48,27 +48,27 @@ type AgentStat struct {
 
 // DashboardSnapshot is a full point-in-time system snapshot
 type DashboardSnapshot struct {
-	GeneratedAt    time.Time              `json:"generated_at"`
-	CostToday      float64                `json:"cost_today_usd"`
-	CostMonth      float64                `json:"cost_month_usd"`
-	BudgetPct      float64                `json:"budget_pct"`
-	TotalAgentTasks int                   `json:"total_agent_tasks"`
-	HighRiskActions int                   `json:"high_risk_actions_24h"`
-	LoopsDetected  int                    `json:"loops_detected"`
-	TokensSaved    int                    `json:"tokens_saved_by_loop_detector"`
-	KBDocuments    int                    `json:"kb_documents"`
-	ActiveGoals    int                    `json:"active_goals"`
-	StalledGoals   int                    `json:"stalled_goals"`
-	Agents         []AgentStat            `json:"agents"`
-	CostSeries     []MetricPoint          `json:"cost_series"`
-	CustomMetrics  map[string]interface{} `json:"custom_metrics,omitempty"`
+	GeneratedAt     time.Time              `json:"generated_at"`
+	CostToday       float64                `json:"cost_today_usd"`
+	CostMonth       float64                `json:"cost_month_usd"`
+	BudgetPct       float64                `json:"budget_pct"`
+	TotalAgentTasks int                    `json:"total_agent_tasks"`
+	HighRiskActions int                    `json:"high_risk_actions_24h"`
+	LoopsDetected   int                    `json:"loops_detected"`
+	TokensSaved     int                    `json:"tokens_saved_by_loop_detector"`
+	KBDocuments     int                    `json:"kb_documents"`
+	ActiveGoals     int                    `json:"active_goals"`
+	StalledGoals    int                    `json:"stalled_goals"`
+	Agents          []AgentStat            `json:"agents"`
+	CostSeries      []MetricPoint          `json:"cost_series"`
+	CustomMetrics   map[string]interface{} `json:"custom_metrics,omitempty"`
 }
 
 // MetricStore is an in-memory time-series store for dashboard metrics
 type MetricStore struct {
-	mu      sync.RWMutex
-	series  map[string][]MetricPoint
-	maxAge  time.Duration
+	mu     sync.RWMutex
+	series map[string][]MetricPoint
+	maxAge time.Duration
 }
 
 // NewMetricStore creates a MetricStore with a retention window
@@ -129,11 +129,11 @@ func (m *MetricStore) Sum(name string, since time.Duration) float64 {
 
 // Analytics is the NEXUS dashboard analytics engine
 type Analytics struct {
-	store   *MetricStore
-	agents  []AgentStat
-	mu      sync.RWMutex
-	mux     *http.ServeMux
-	port    int
+	store  *MetricStore
+	agents []AgentStat
+	mu     sync.RWMutex
+	mux    *http.ServeMux
+	port   int
 }
 
 // New creates an Analytics instance
