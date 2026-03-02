@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Voice+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+Shadow+Mode+%E2%80%A2+UI-to-API;Hive-Mind+P2P+Mesh+%E2%80%A2+Neuro-Fuzzing" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+UI-to-API;Hive-Mind+Mesh+%E2%80%A2+Neuro-Fuzzing;NL-to-n8n+DAG+Compiler" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -98,6 +98,10 @@ The WebUI uses an ultra-lightweight `//go:embed` architecture with zero JS frame
 
 ## ✨ Features that fix the broken agent ecosystem
 
+### 🔄 Natural Language to n8n DAG Compiler
+> *Stop dragging and dropping. Speak your automations into existence.*
+Tell NEXUS: *"Check my FirstBit ERP daily, and if revenue drops, ping a Meta Ads agent."* NEXUS natively compiles this logic into a valid n8n Directed Acyclic Graph (DAG) JSON, spaces the nodes out perfectly, maps the connections, and deploys it directly to your running n8n instance via API. 
+
 ### 🛡️ Agentic Fuzzing (Neuro-Fuzzing)
 > *An adversarial agent that attacks the code the creator agent just wrote.*
 Before any auto-generated code is deployed to the Event Bus, the internal "Attacker Agent" heavily bombards the WebAssembly module with Null Bytes, SQL Injections, Path Traversals, and 10MB memory-exhaustion payloads. If the generated agent panics or hits an infinite loop (DoS), the deployment is instantly rejected. 
@@ -159,6 +163,7 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 
 | Capability | NEXUS | AutoAgent | AutoGPT | CrewAI | LangChain |
 |:---|:---:|:---:|:---:|:---:|:---:|
+| **NL-to-n8n DAG Compiler** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Agentic Fuzzing (Security)**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **P2P Mesh Computing** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Zero-Latency (Pre-Compute)**| ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -167,7 +172,6 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 | **Self-healing failures** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Shadow Mode Evolution** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Risk gate (HITL)** | ✅ | ❌ | ⚠️ | ⚠️ | ❌ |
-| **100% Offline mode** | ✅ | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
