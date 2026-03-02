@@ -1,12 +1,6 @@
 package n8n
 
-// Workflow represents a standard n8n workflow JSON structure.
-type Workflow struct {
-	Name        string                               `json:"name"`
-	Nodes       []Node                               `json:"nodes"`
-	Connections map[string]map[string][]ConnectionTarget `json:"connections"`
-	Settings    map[string]interface{}               `json:"settings,omitempty"`
-}
+import "context"
 
 // Node represents a single step or integration in an n8n workflow.
 type Node struct {

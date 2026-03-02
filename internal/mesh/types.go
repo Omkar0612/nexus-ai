@@ -1,9 +1,6 @@
 package mesh
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -23,19 +20,8 @@ type Node struct {
 	LastSeen time.Time       `json:"-"`
 }
 
-// TaskRequest represents a payload sent from a weak node to a strong node.
-type TaskRequest struct {
-	TaskType string `json:"task_type"` // e.g., "IMAGE_GEN", "LLM_INFERENCE"
-	Payload  []byte `json:"payload"`
-}
-
 // TaskResponse represents the result of offloaded computation.
 type TaskResponse struct {
 	Result []byte `json:"result"`
 	Error  string `json:"error,omitempty"`
-}
-
-// NodeClient handles the HTTP communication between peers in the mesh.
-type NodeClient interface {
-	Dispatch(ctx context.Context, targetAddress string, req *TaskRequest) (*TaskResponse, error)
 }
