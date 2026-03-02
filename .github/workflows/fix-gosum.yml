@@ -1,0 +1,34 @@
+name: Fix go.sum
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-gosum.yml'
+
+jobs:
+  fix-gosum:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+
+      - name: Regenerate go.sum
+        run: |
+          go mod tidy
+          go mod download
+
+      - name: Commit go.sum
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add go.mod go.sum
+          # Only commit if there are changes
+          git diff --quiet && git diff --staged --quiet || (git commit -m "build: regenerate go.sum via GitHub Actions" && git push)
