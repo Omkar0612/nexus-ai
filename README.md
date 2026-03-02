@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Voice+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+Shadow+Mode+%E2%80%A2+UI-to-API;Hive-Mind+P2P+Mesh+%E2%80%A2+Predictive+Pre-Compute" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Voice+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+Shadow+Mode+%E2%80%A2+UI-to-API;Hive-Mind+P2P+Mesh+%E2%80%A2+Neuro-Fuzzing" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -98,6 +98,10 @@ The WebUI uses an ultra-lightweight `//go:embed` architecture with zero JS frame
 
 ## ✨ Features that fix the broken agent ecosystem
 
+### 🛡️ Agentic Fuzzing (Neuro-Fuzzing)
+> *An adversarial agent that attacks the code the creator agent just wrote.*
+Before any auto-generated code is deployed to the Event Bus, the internal "Attacker Agent" heavily bombards the WebAssembly module with Null Bytes, SQL Injections, Path Traversals, and 10MB memory-exhaustion payloads. If the generated agent panics or hits an infinite loop (DoS), the deployment is instantly rejected. 
+
 ### 🕸️ Hive-Mind Mesh Computing
 > *Turn your devices into a unified AI supercomputer.*
 Run NEXUS on your phone, laptop, and VPS. Using the P2P Mesh Network, they automatically discover each other. If you ask your phone to generate a heavy Stable Diffusion image, the phone's NEXUS dynamically routes the compute payload to your Desktop's GPU over your local network, and returns the result to your phone. 
@@ -133,13 +137,6 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 ✅  Task recovered. Cost: $0.00
 ```
 
-### 🛡️ Human-in-the-Loop Risk Gate
-| Risk | Examples | Behaviour |
-|:---:|:---|:---|
-| 🟢 Low | Read, Search, Chat | Silent execute |
-| 🟡 Medium | Write file, Send message | Execute + log |
-| 🔴 High | Delete, Push to GitHub, Call | Pause → ask permission |
-
 ### 🧠 Deep Memory
 - **Episodic** — SQLite conversation history
 - **Semantic** — SQLite Vector Search with Ollama Embeddings (fully local)
@@ -162,6 +159,7 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 
 | Capability | NEXUS | AutoAgent | AutoGPT | CrewAI | LangChain |
 |:---|:---:|:---:|:---:|:---:|:---:|
+| **Agentic Fuzzing (Security)**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **P2P Mesh Computing** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Zero-Latency (Pre-Compute)**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Zero-Code Agent Generation**| ✅ (Hot WASM) | ✅ (Docker) | ❌ | ❌ | ❌ |
