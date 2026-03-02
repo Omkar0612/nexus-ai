@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Voice+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+Shadow+Mode+%E2%80%A2+UI-to-API;Zero-Latency+Predictive+Pre-Computation" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=7C3AED&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=60&lines=Self-healing+%E2%80%A2+Drift-aware+%E2%80%A2+100%25+Free;Web+UI+%E2%80%A2+Image+Gen+%E2%80%A2+Voice+%E2%80%A2+Writing+Studio;Auto-Forge+WASM+%E2%80%A2+Shadow+Mode+%E2%80%A2+UI-to-API;Hive-Mind+P2P+Mesh+%E2%80%A2+Predictive+Pre-Compute" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -98,6 +98,10 @@ The WebUI uses an ultra-lightweight `//go:embed` architecture with zero JS frame
 
 ## ✨ Features that fix the broken agent ecosystem
 
+### 🕸️ Hive-Mind Mesh Computing
+> *Turn your devices into a unified AI supercomputer.*
+Run NEXUS on your phone, laptop, and VPS. Using the P2P Mesh Network, they automatically discover each other. If you ask your phone to generate a heavy Stable Diffusion image, the phone's NEXUS dynamically routes the compute payload to your Desktop's GPU over your local network, and returns the result to your phone. 
+
 ### 🧠 Predictive Pre-Computation (Zero-Latency AI)
 > *Why wait 3 minutes for Deep Research when NEXUS already did it?*
 AutoAgent and LangChain sit idle until you type a prompt. NEXUS monitors your world. If it sees you have a meeting at 2:00 PM, or you just pushed a broken commit, it spins up the background workers instantly. By the time you open the WebUI, the meeting brief and the code fix are already cached and waiting for you. Zero latency.
@@ -158,6 +162,7 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 
 | Capability | NEXUS | AutoAgent | AutoGPT | CrewAI | LangChain |
 |:---|:---:|:---:|:---:|:---:|:---:|
+| **P2P Mesh Computing** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Zero-Latency (Pre-Compute)**| ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Zero-Code Agent Generation**| ✅ (Hot WASM) | ✅ (Docker) | ❌ | ❌ | ❌ |
 | **Reverse Engineer UI to API**| ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -165,7 +170,6 @@ NEXUS continuously tests faster models and optimized prompts in a hidden backgro
 | **Shadow Mode Evolution** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Risk gate (HITL)** | ✅ | ❌ | ⚠️ | ⚠️ | ❌ |
 | **100% Offline mode** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **AES-256 Vault** | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
