@@ -1,0 +1,10 @@
+golang.org/x/crypto v0.21.0 h1:X31++82pZXkH0eE5YkF1KIf1F2hZ7A20HwG5w/G9Zwg=
+golang.org/x/crypto v0.21.0/go.mod h1:1q//k7h083z2Oa1a6/d5b+g97V6KXXZ+4B+V+yB6E3g=
+github.com/mattn/go-sqlite3 v1.14.22 h1:aQzg12t7K2qGtsq4gCgG/E+X54P0QjYwP40U0L6f+3E=
+github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:8hE4A5r71K1A41K5+8Y4J9hM6lJ5wYc1jB2zO/yRjG4=
+github.com/rs/zerolog v1.32.0 h1:9r2e+3Z+Xk+g1V3/8T8QyT8YwH/5V5b4T6n1y+4x6tA=
+github.com/rs/zerolog v1.32.0/go.mod h1:1gG7tV9c+s0pXQzK8Y7D/n1E8l+v5Z7N+A3y/M5x1Yw=
+github.com/spf13/cobra v1.8.0 h1:7aJaRx2hZ+7dF8A8K7QnN4aGq9K/G7O9fP+Wq6/G1aI=
+github.com/spf13/cobra v1.8.0/go.mod h1:WtlEbW1B8gP6T0Y4f2iA6k/tM6VwP+V4D7b4k3+QkQ8=
+github.com/spf13/viper v1.18.2 h1:4YkZ+3W+sK+uO8XpZ/A2/Z/J+r2t1T9m+X8e8f+5P4A=
+github.com/spf13/viper v1.18.2/go.mod h1:8t5Y2+sK+1Z/J+tD/T/O8/J/J/y+g/M/B/R/y+g+mY=
