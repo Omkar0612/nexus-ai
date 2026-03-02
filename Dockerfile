@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # ---- Build stage ----
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 WORKDIR /app
 
 # gcc + musl needed for CGO (sqlite3)
