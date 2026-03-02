@@ -38,7 +38,6 @@ func NewRuntime(ctx context.Context) *Runtime {
 	wasi_snapshot_preview1.MustInstantiate(ctx, r)
 	
 	// Export the NEXUS Host ABI
-	// Agents will call these functions to request data from the main Go process safely.
 	_, err := r.NewHostModuleBuilder("nexus_env").
 		NewFunctionBuilder().
 		WithFunc(hostLog).
@@ -60,7 +59,6 @@ func (r *Runtime) LoadAgent(name string, wasmBytes []byte, stdout io.Writer) (*A
 		stdout = os.Stdout
 	}
 
-	// Configure the sandbox limits. No files, no env vars.
 	config := wazero.NewModuleConfig().
 		WithName(name).
 		WithStdout(stdout).
@@ -78,17 +76,44 @@ func (r *Runtime) LoadAgent(name string, wasmBytes []byte, stdout io.Writer) (*A
 	}, nil
 }
 
-// Execute triggers the exported "run" function inside the Wasm agent.
+// Execute triggers the exported "run" function inside the Wasm agent, passing a string payload.
 func (a *AgentModule) Execute(ctx context.Context, input string) (string, error) {
+	// 1. Get the export functions
+	malloc := a.mod.ExportedFunction("malloc")
+	free := a.mod.ExportedFunction("free")
 	runFunc := a.mod.ExportedFunction("run")
+
 	if runFunc == nil {
 		return "", fmt.Errorf("agent %s does not export a 'run' function", a.name)
 	}
+	
+	// Fast path: if the agent doesn't take args, just run it
+	if malloc == nil || len(input) == 0 {
+		_, err := runFunc.Call(ctx)
+		if err != nil {
+			return "", fmt.Errorf("agent execution failed: %w", err)
+		}
+		return "Executed successfully without payload", nil
+	}
 
-	// Note: String passing between Go Host and Wasm Guest requires writing to Wasm memory.
-	// For this initial implementation, we execute without arguments.
-	// A full memory allocator for string passing will be added in the next PR.
-	_, err := runFunc.Call(ctx)
+	// 2. Allocate memory inside Wasm sandbox for the input string
+	inputSize := uint64(len(input))
+	results, err := malloc.Call(ctx, inputSize)
+	if err != nil {
+		return "", fmt.Errorf("failed to allocate memory in wasm: %w", err)
+	}
+	inputPtr := results[0]
+
+	// Ensure we free the memory when done
+	defer free.Call(ctx, inputPtr)
+
+	// 3. Write the string to the Wasm sandbox memory
+	if !a.mod.Memory().Write(uint32(inputPtr), []byte(input)) {
+		return "", fmt.Errorf("failed to write payload to wasm memory")
+	}
+
+	// 4. Execute the agent passing the pointer and length
+	_, err = runFunc.Call(ctx, inputPtr, inputSize)
 	if err != nil {
 		return "", fmt.Errorf("agent execution failed: %w", err)
 	}
@@ -108,7 +133,6 @@ func (r *Runtime) Close(ctx context.Context) error {
 
 // --- NEXUS HOST ABI FUNCTIONS ---
 
-// hostLog allows the Wasm agent to write logs back to the NEXUS host logger.
 func hostLog(ctx context.Context, mod api.Module, ptr uint32, length uint32) {
 	if bytes, ok := mod.Memory().Read(ptr, length); ok {
 		fmt.Printf("[WASM Agent] %s\n", string(bytes))
